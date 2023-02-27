@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-02-27 15:41:34
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-02-27 17:47:51
+ * @LastEditTime: 2023-02-27 17:54:39
  * @FilePath: /cpptest/tinythreadpool-c++11/README.md
 -->
 # 基于c++11实现一个线程池
@@ -101,7 +101,7 @@ private:
 ```
 这里用到多个c++11新特性:  
 1. ```template<typename F, typename ...Args>```是c++11引入的可变模板参数    
-2. ```auto AddTask(F&&f, Args &&...args)->std::future<decltype(f(args...))>```是尾返回值推到，c++14可以直接使用auto来进行类型推导  
+2. ```auto AddTask(F&&f, Args &&...args)->std::future<decltype(f(args...))>```是尾返回值推导，c++14可以直接使用auto来进行类型推导不需要尾返回值。 
 3. 使用```std::function<>```和```std::bind()```将可变参数包装并绑定到一个特殊函数func上，这里我们注意到```bind()```中出现了一个```std::forward<T>()```的特殊方法，```std::forward<T>()```又称完美转发，将保留参数的引用类型进行转发（lvalue/rvalue）
 4. 这里的```F&& f```和```Args&&... args```不是右值引用的意思，在可变长模板中是万能引用的意思，当```T```为模板时，```T&&```的作用是保持值的类型进行转发。
 5. ```std::packaged_task```与```std::future<>```配和使用，前者用来封装任何可以调用的目标并被子线程执行，后者在得到结果时，主线程可以通过```get_future()```来异步调用前者执行的结果
