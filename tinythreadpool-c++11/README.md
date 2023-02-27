@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-02-27 15:41:34
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-02-27 17:54:39
+ * @LastEditTime: 2023-02-27 17:58:08
  * @FilePath: /cpptest/tinythreadpool-c++11/README.md
 -->
 # 基于c++11实现一个线程池
@@ -90,9 +90,9 @@ private:
         std::function<void()> wrapper_func = [task_ptr](){
             (*task_ptr)();
         };
-        // queue_.enqueue([task_ptr](){
+        /* queue_.enqueue([task_ptr](){
             (*task_ptr)();
-        })
+        })*/
         queue_.enqueue(wrapper_func);//放入任务队列
         cv_.notify_one();//唤醒一个线程
         //返回当前任务future指针，使用get()函数等待任务执行结果
