@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-02-24 11:28:22
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-02-25 13:33:49
- * @FilePath: /tinythreadpool-c++11/threadpool.h
+ * @LastEditTime: 2023-02-27 16:57:38
+ * @FilePath: /cpptest/tinythreadpool-c++11/threadpool.h
  */
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
@@ -152,7 +152,7 @@ public:
         auto task_ptr = std::make_shared<std::packaged_task<ret()>>(func);
 
         std::function<void()> wrapper_func = [task_ptr](){
-            return (*task_ptr)();
+            (*task_ptr)();
         };
         queue_.enqueue(wrapper_func);
         cv_.notify_one();
