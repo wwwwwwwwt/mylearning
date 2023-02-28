@@ -2,11 +2,11 @@
  * @Author: zzzzztw
  * @Date: 2023-02-27 10:19:27
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-02-27 11:05:25
+ * @LastEditTime: 2023-02-27 18:23:50
  * @FilePath: /cpptest/Effectivecpp/clause11.md
 -->
 
-# 实现安全的赋值运算符  
+# clause.11 实现安全的赋值运算符  
 
 首先我们有一个Bitmap类和Wight类，Wight类中有一个指针指向Bitmap类并在堆上分配内存
 ```cpp

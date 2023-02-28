@@ -2,11 +2,11 @@
  * @Author: zzzzztw
  * @Date: 2023-02-27 10:55:11
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-02-27 13:25:42
+ * @LastEditTime: 2023-02-27 18:23:58
  * @FilePath: /cpptest/Effectivecpp/clause12.md
 -->
 
-# 赋值对象时，不要忘记每一个成员
+# clause.12 赋值对象时，不要忘记每一个成员
 
 例子如下：
 
