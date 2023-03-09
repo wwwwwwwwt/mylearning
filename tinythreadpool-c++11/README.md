@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-02-27 15:41:34
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-02-27 17:58:08
+ * @LastEditTime: 2023-03-08 14:56:38
  * @FilePath: /cpptest/tinythreadpool-c++11/README.md
 -->
 # 基于c++11实现一个线程池
@@ -102,7 +102,64 @@ private:
 这里用到多个c++11新特性:  
 1. ```template<typename F, typename ...Args>```是c++11引入的可变模板参数    
 2. ```auto AddTask(F&&f, Args &&...args)->std::future<decltype(f(args...))>```是尾返回值推导，c++14可以直接使用auto来进行类型推导不需要尾返回值。 
-3. 使用```std::function<>```和```std::bind()```将可变参数包装并绑定到一个特殊函数func上，这里我们注意到```bind()```中出现了一个```std::forward<T>()```的特殊方法，```std::forward<T>()```又称完美转发，将保留参数的引用类型进行转发（lvalue/rvalue）
+3. 使用```std::function<>```和```std::bind()```将可变参数包装并绑定到一个特殊函数func上，这里我们注意到```bind()```中出现了一个```std::forward<T>()```的特殊方法，```std::forward<T>()```又称完美转发，将保留参数的引用类型进行转发（lvalue/rvalue）  
+注意 std::bind()有四种常用用法
+```cpp
+//1.绑定普通函数
+double callback(double x, double y){ return x * y; }
+auto cb = std::bind(callback,std::placeholders::_1, 2);
+std::cout<<cb(10)<<std::endl;
+//bind的第一个参数是函数名，普通函数做实参时，会隐式转换成函数指针，因此等价于bind(&callback,_1,2);
+// _1表示占位符，位于<functional>文件中
+// 传入参数被_1占用，传入10，实际调用cb(10,2)
+
+//2.绑定成员函数
+class Base
+{
+    void display(int a, int b){
+        cout<<a + b <<endl;
+    }
+};
+
+int main{
+    Base bs;
+    auto func = bind(&Base::display, &bs,placeholder::_1, placeholder::_2);
+    func(10,20);
+}
+//绑定成员函数时，第一个参数表示对象的成员函数指针，第二个参数表示对象的地址
+//必须现实的指定&Base::display，因为编译器不会将对象的成员函数隐式的转换成函数指针
+//使用成员函数的指针时，必须知道该指针属于那个对象，因此第二个参数必须传入对象地址
+
+//3.绑定类中其他非静态成员函数
+
+class Base
+{
+public: 
+    Base(int a,int b):a(a),b(b){}
+    ~Base(){};
+    void work(){
+        auto func = bind(&Base::test,this,placeholder::_1, placeholder::_2);
+        func(a,b);
+    }
+    void test(int a,int b){
+        cout<<a + b<<endl;
+    }
+private:
+    int a;
+    int b;
+};
+//bind绑定了其他成员函数函数可以函数来构造bind对象  
+//bind函数的第二个参数是this,它指向当前对象，通过它可以访问当前对象的所有成员）
+
+//4.用于可变参数模板
+template<typename F,typename ...Args>
+auto test(F&& f, Arges&& ...args)->std::future(decltype(f(...args)))
+{
+    ...
+    auto func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+    ...
+}
+```
 4. 这里的```F&& f```和```Args&&... args```不是右值引用的意思，在可变长模板中是万能引用的意思，当```T```为模板时，```T&&```的作用是保持值的类型进行转发。
 5. ```std::packaged_task```与```std::future<>```配和使用，前者用来封装任何可以调用的目标并被子线程执行，后者在得到结果时，主线程可以通过```get_future()```来异步调用前者执行的结果
 6. 使用智能指针```std::shared_ptr<>()```方法声明智能指针，并将```function<ret()>```声明的func传入，目的是将```std::packaged_task```对象的所有权转移到线程池中，否则这个临时对象将在addtask函数执行后销毁。

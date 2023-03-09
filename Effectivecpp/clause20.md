@@ -2,10 +2,10 @@
  * @Author: zzzzztw
  * @Date: 2023-03-02 09:18:30
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-02 10:43:03
+ * @LastEditTime: 2023-03-06 14:20:29
  * @FilePath: /cpptest/Effectivecpp/clause20.md
 -->
-# 使用const引用传递优于按值传递
+# clause20. 使用const引用传递优于按值传递
 1. 有以下代码：
 ```cpp
 class Person{

@@ -2,6 +2,9 @@
     "files.associations": {
         "iostream": "cpp",
         "chrono": "cpp",
-        "condition_variable": "cpp"
+        "condition_variable": "cpp",
+        "ostream": "cpp",
+        "iosfwd": "cpp",
+        "random": "cpp"
     }
 }
