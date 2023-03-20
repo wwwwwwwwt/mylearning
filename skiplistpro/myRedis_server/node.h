@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-03-16 15:11:08
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-16 15:44:30
+ * @LastEditTime: 2023-03-20 19:59:39
  * @FilePath: /cpptest/skiplistpro/myRedis_server/node.h
  */
 #ifndef NODE_H
@@ -48,7 +48,7 @@ Node<K,V> :: Node(K k, V v, int level)
 template<typename K, typename V>
 Node<K,V>::~Node()
 {
-    delete []next;
+    
 }
 
 template<typename K, typename V>
@@ -66,7 +66,7 @@ V Node<K,V>::get_val()const
 template<typename K, typename V>
 void Node<K,V>::set_val(V v)
 {
-    val = val;
+    val = v;
 }
 
 #endif 

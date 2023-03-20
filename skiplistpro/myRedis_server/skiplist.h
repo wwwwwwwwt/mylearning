@@ -2,22 +2,26 @@
  * @Author: zzzzztw
  * @Date: 2023-03-16 15:10:04
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-17 17:03:53
+ * @LastEditTime: 2023-03-20 21:24:30
  * @FilePath: /cpptest/skiplistpro/myRedis_server/skiplist.h
  */
 #ifndef SKIPLIST_H
 #define SKIPLIST_H
 
-#include "node.h"
+#include "./node.h"
+#include "./random.h"
 #include <fstream>
 #include <mutex>
 #include <string>
 #include <mutex>
+#include <iostream>
+
 
 using std::string;
 using std::ifstream;
 using std::ofstream;
 using std::mutex;
+
 template<typename K, typename V>
 class Skiplist
 {
@@ -39,7 +43,7 @@ public:
     void load_file();
 
 private:
-
+    int get_random_level();
     void find(V target, vector<Node<K,V>*>& pre); 
 
     void get_key_val_from_string(const string&str, string* key, string *val);
@@ -59,7 +63,7 @@ private:
 
     Node<K,V>* header_; //跳表头节点
     mutex mtx_;
-    
+    Random rnd;
 };
 
 //找到每一层的小于目标值的最大节点，开一个pre数组用于保存这个节点
@@ -68,7 +72,7 @@ void Skiplist<K,V>::find(V target,vector<Node<K,V>*>& pre)
 {
     auto p = header_;
     for(int i = max_level - 1; i>=0; i--){
-        while(p->next[i] && p->next[i]->val < target)p = p->next[i];
+        while(p->next[i] && p->next[i]->get_key() < target)p = p->next[i];
         pre[i] = p;
     }
 }
@@ -81,7 +85,7 @@ Node<K,V>* Skiplist<K,V>::create_node(K k, V v, int level)
 }
 
 template<typename K, typename V>
-Skiplist<K,V>::Skiplist()
+Skiplist<K,V>::Skiplist():rnd(0x12345678)
 {
     max_level = 32;
     cur_onlevel = 0;
@@ -89,11 +93,12 @@ Skiplist<K,V>::Skiplist()
     /*创造虚拟头节点，初始化为null null max_level*/
     K k;
     V v;
+    rnd = {0x12345678};
     header_ = new Node<K,V>(k, v, max_level);
 }
 
 template<typename K, typename V>
-Skiplist<K,V>::Skiplist(int level)
+Skiplist<K,V>::Skiplist(int level):rnd(0x12345678)
 {
     max_level = level;
     cur_onlevel = 0;
@@ -118,28 +123,107 @@ Skiplist<K,V>::~Skiplist()
 }
 
 template<typename K, typename V>
+int Skiplist<K,V>::get_random_level(){
+
+    int level = static_cast<int>(rnd.Uniform(max_level));
+    if(level == 0){
+        level = 1;
+    }
+    return level;
+
+}
+
+template<typename K, typename V>
 int Skiplist<K,V>::insert_element(K key, V val)
 {
+    std::lock_guard<mutex>locker(mtx_);
+    vector<Node<K,V>*>pre(max_level);
+    find(key,pre);
+
+    auto p = pre[0]->next[0];
+    if(p && p->get_key() == key ){
+        p->set_val(val);
+        return 0;
+    }
+
+
+
+    if(!p || p->get_key() != key){
+        int random_level = get_random_level();
+        Node<K,V> * insert_node = new Node<K,V>(key,val,random_level);
+
+        for(int i = 0;i< random_level ;i ++){
+            insert_node->next[i] = pre[i]->next[i];
+            pre[i]->next[i] = insert_node;
+        }
+        element_count_++;
+
+        return 1;
+    }
+    return -1;
 
 }
 
 template<typename K, typename V>
 bool Skiplist<K,V>::search_element(K key, V &val)
 {
+    std::lock_guard<mutex>locker(mtx_);
     /*通过val将查询到的值传出去*/
+    vector<Node<K,V>* >pre(max_level);
+    find(key, pre);
+
+    auto p = pre[0]->next[0];
+    if(p && p->get_key() ==  key){
+        val = p->get_val();
+        return true;
+    }
+    return false;
 }
 
 
 template<typename K, typename V>
 bool Skiplist<K,V>::delete_element(K key)
 {
-    
+    std::lock_guard<mutex>locker(mtx_);
+    vector<Node<K,V>*>pre(max_level);
+    find(key,pre);
+    auto p = pre[0]->next[0];
+    if(!p||p->get_key() != key){
+        return false;
+    }
+    else{
+        for(int i = 0;i<=max_level && pre[i]->next[i] == p; i++){
+            pre[i]->next[i] = p->next[i];
+        }
+        delete p;
+    }
+    element_count_--;
+    return true;
+}
+
+template<typename K, typename V>
+void Skiplist<K,V>::display_list()
+{
+    std::cout<<"SkipList:\n";
+
+    Node<K,V> *current;
+
+    for(int i= max_level; i >= 0; i--){
+        current=header_->next[i];
+        std::cout<<"Level "<<i<<":\n";
+        while(current!=nullptr){
+            std::cout<<' '<<current->get_key()<<" : "<<current->get_val();
+            current=current->next[i];
+        }
+        std::cout<<"\n";
+    }
+    return;
 }
 
 template<typename K, typename V>
 int Skiplist<K,V>:: size()const
 {
-
+    return this->element_count_;
 }
 
 
