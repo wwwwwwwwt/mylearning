@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-03-16 13:13:40
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-16 14:09:58
+ * @LastEditTime: 2023-03-21 20:11:29
  * @FilePath: /cpptest/skiplistpro/myRedis_server/command.h
  */
 
@@ -101,6 +101,19 @@ bool Command::is_valid_command()
         print_error(6);
         return false;
     }
+    
+    if(arg_[0] == "dumppath" && arg_.size() != 2)
+    {
+        print_error(6);
+        return false;
+    }
+    
+    if(arg_[0] == "loadpath" && arg_.size() != 2)
+    {
+        print_error(6);
+        return false;
+    }
+    
 
     std::cout<<"success"<<std::endl;
     return true;

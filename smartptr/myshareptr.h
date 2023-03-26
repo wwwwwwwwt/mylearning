@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-02-24 16:30:39
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-02-24 17:21:25
- * @FilePath: /zhang/smartptr/myshareptr.h
+ * @LastEditTime: 2023-03-23 20:59:54
+ * @FilePath: /cpptest/smartptr/myshareptr.h
  */
 #ifndef MYSHAREPTR_H
 #define MYSHAREPTR_H
@@ -27,6 +27,14 @@ public:
     }
 
     Myshared_ptr(const Myshared_ptr& s){
+        if(this->ptr_ != s.ptr_){
+            ptr_ = s.ptr_;
+            count_ = s.count_;
+            (*count_)++;
+        }
+    }
+
+    Myshared_ptr(Myshared_ptr&& s){
         if(this->ptr_ != s.ptr_){
             ptr_ = s.ptr_;
             count_ = s.count_;

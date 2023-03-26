@@ -86,6 +86,13 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "*.def": "cpp"
+        "*.def": "cpp",
+        "executor": "cpp",
+        "buffer": "cpp",
+        "internet": "cpp",
+        "io_context": "cpp",
+        "netfwd": "cpp",
+        "socket": "cpp",
+        "timer": "cpp"
     }
 }

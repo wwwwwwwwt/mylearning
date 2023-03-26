@@ -2,9 +2,10 @@
  * @Author: zzzzztw
  * @Date: 2023-03-16 15:10:04
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-20 21:24:30
+ * @LastEditTime: 2023-03-21 20:08:38
  * @FilePath: /cpptest/skiplistpro/myRedis_server/skiplist.h
  */
+
 #ifndef SKIPLIST_H
 #define SKIPLIST_H
 
@@ -15,6 +16,10 @@
 #include <string>
 #include <mutex>
 #include <iostream>
+
+#define STORE_PATH   "../store/dumpFile.txt"
+#define DIR_PATH "../store"
+std::string delimiter =":";
 
 
 using std::string;
@@ -41,13 +46,15 @@ public:
 
     void dump_file();
     void load_file();
+    void dump_file_path(const string &str);
+    void load_file_path(const string &str);
 
 private:
     int get_random_level();
     void find(V target, vector<Node<K,V>*>& pre); 
 
     void get_key_val_from_string(const string&str, string* key, string *val);
-    void is_valid_string(const string &str);
+    bool is_valid_string(const string &str);
     
 private:
 
@@ -230,25 +237,108 @@ int Skiplist<K,V>:: size()const
 template<typename K, typename V>
 void Skiplist<K,V>::dump_file()
 {
+    
+    fileWriter_.open(STORE_PATH);
+
+    string line;
+    
+    Node<K,V>* node = header_->next[0];
+
+    while(node != nullptr){
+        fileWriter_<<node->get_key()<< " " << node->get_val()<<"\n";
+        node = node->next[0];
+    }
+    fileWriter_.flush();
+    fileWriter_.close();
+    return;
 
 }
 
 template<typename K, typename V>
 void Skiplist<K,V>::load_file()
 {
-    
+    fileReader_.open(STORE_PATH);
+
+    string line;
+    string *key = new string();
+    string *val = new string();
+
+    while(getline(fileReader_, line)){
+        get_key_val_from_string(line,key,val);
+        if(key->empty() || val->empty())continue;
+
+        insert_element(*key, *val);
+    }
+    fileReader_.close();
+    return;
 }
+
+template<typename K, typename V>
+void Skiplist<K,V>::dump_file_path(const string &str)
+{
+    string path_ = DIR_PATH + str;
+    fileWriter_.open(path_);
+    string line;
+    
+    Node<K,V>* node = header_->next[0];
+
+    while(node != nullptr){
+        fileWriter_<<node->get_key()<< " " << node->get_val()<<"\n";
+        node = node->next[0];
+    }
+    fileWriter_.flush();
+    fileWriter_.close();
+    return;
+
+}
+
+
+
+template<typename K, typename V>
+void Skiplist<K,V>::load_file_path(const string &str)
+{   string path_ = DIR_PATH + str;
+    fileReader_.open(path_);
+
+    string line;
+    string *key = new string();
+    string *val = new string();
+
+    while(getline(fileReader_, line)){
+        get_key_val_from_string(line,key,val);
+        if(key->empty() || val->empty())continue;
+
+        insert_element(*key, *val);
+    }
+    fileReader_.close();
+    return;
+}
+
 
 template<typename K, typename V>
 void Skiplist<K,V>::get_key_val_from_string(const string& str, string* key, string* val)
 {
 
+    if(!is_valid_string(str))return;
+
+    int pos = str.find(delimiter);
+
+    *key = str.substr(0,pos);
+    *val = str.substr(pos+1, str.size());
+
+    return;
 }
 
 template<typename K, typename V>
-void Skiplist<K,V>::is_valid_string(const string&str)
+bool Skiplist<K,V>::is_valid_string(const string& str)
 {
     
+    if(str.size() == 0)return false;
+
+    if(str.find(delimiter) == string::npos)return false;
+
+
+    return true;
+
 }
 
 #endif
