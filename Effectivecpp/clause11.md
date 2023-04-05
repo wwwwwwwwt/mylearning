@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-02-27 10:19:27
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-02-27 18:23:50
- * @FilePath: /cpptest/Effectivecpp/clause11.md
+ * @LastEditTime: 2023-04-05 23:03:14
+ * @FilePath: /zhang/cpptest/Effectivecpp/clause11.md
 -->
 
 # clause.11 实现安全的赋值运算符  
@@ -61,3 +61,22 @@ Wight& Wight::operator=(const Wight& rhs){
 ```
 乍一看我们没有检查自身赋值的情况，但我们产生自身赋值情况时也只是走一遍这个函数的流程，损耗了一些时间，而且自身赋值的情况很少见。  
 但这种写法保证了new时抛出异常时，自身Wight对象的完整。
+
+
+# 最好的异常安全实现赋值运算符的方法
+
+```cpp
+实现一个swap函数用于交换指针等
+void wight::swap(wight& rhs){
+    using std::swap;
+    swap(pb, rhs.pb);
+    swap(...,rhs...);
+}
+...
+
+wighi& wight::operator=(wight rhs){
+    rhs.swap(*this);
+    return *this
+}
+
+```

@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-03-06 08:59:15
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-04-03 14:07:20
- * @FilePath: /cpptest/Effectivecpp/clause21.md
+ * @LastEditTime: 2023-04-05 22:09:39
+ * @FilePath: /zhang/cpptest/Effectivecpp/clause21-25.md
 -->
 # clause21. 不要错误的返回对象的引用
 
@@ -145,3 +145,5 @@ private:
 
 
 ```
+
+# clause.26 尽量延后变量的定义会使得程序易于维护。
