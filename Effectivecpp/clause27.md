@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-04-05 22:09:58
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-04-05 22:55:59
- * @FilePath: /zhang/cpptest/Effectivecpp/clause27.md
+ * @LastEditTime: 2023-04-07 11:38:42
+ * @FilePath: /cpptest/Effectivecpp/clause27.md
 -->
 # clause27. 强制转换变量类型
 
@@ -11,19 +11,21 @@
 
 ```cpp
 
-1. const_cast<T>(expression) 用于带有常量的指针，将const去除
+1. const_cast<T>(expression) 用于带有常量的指针，将const去除，或增加const
 
 2. dynamic_cast<T>(expression) 
 用于父类指针向下转换为子类指针，安全向下转型；
 代价很高，其他三个转换都发生在编译时，只有这个发生在运行时
 
 3. reinterpret_cast<T>(expression)
-主要用于指针之间，或指针和整形之间转换
+主要用于指针之间，或指针和整形之间转换，一般不使用，高危操作，从底层对数据类型重新解释，
+可以将整形转换为指针，将指针转换为数组，将指针和引用互相转换。
 
 4. static_cast<T>(expression)
-用于整形之间转换，或者不带const转变为带const
-例如
+用于整形之间转换，明确指出类型转换，没有动态类型检查，所以上行转换安全（派生类转换为基类安全），下行转换不安全（基类转换为派生类）
+主要用于执行非多态的转换操作。
 
+例如：
 void dosome(const wiget& w);
 dosome(wiget(15));或dosome(static_cast<wiget>(15));
 
