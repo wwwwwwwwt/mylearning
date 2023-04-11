@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-02-25 16:48:22
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-17 19:22:54
+ * @LastEditTime: 2023-04-11 15:44:32
  * @FilePath: /cpptest/threadprint/test.cpp
  */
 #include <iostream>
@@ -17,8 +17,8 @@ private:
     condition_variable cv_;
   //  char flag;
     enum Flag {A = 0, B, C};
-    Flag flag;
-    void state(Flag &flag){
+    volatile Flag flag;
+    void state(volatile Flag &flag){
         switch (flag)
         {
         case A:
