@@ -94,6 +94,7 @@
         "netfwd": "cpp",
         "socket": "cpp",
         "timer": "cpp",
-        "sched.h": "c"
+        "sched.h": "c",
+        "cassert": "cpp"
     }
 }
