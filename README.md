@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-02-27 13:29:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-04-19 11:02:51
+ * @LastEditTime: 2023-04-19 14:51:20
  * @FilePath: /myLearning/README.md
 -->
 # 学习c++时写的一些小case和读的一些书
@@ -16,4 +16,4 @@
 7. to do <<c++17 stl cookbool>>
 8. ....
 
-* 小的轮子：基于c++11的线程池，手写vector，时间轮定时器，ebpf中bcc的一些简单实现
+* 小的轮子：基于c++11的线程池，简单的内存池和测试框架，手写vector，时间轮定时器，ebpf中bcc的一些简单实现
