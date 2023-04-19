@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-03-29 10:16:28
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-29 10:21:55
+ * @LastEditTime: 2023-04-19 10:07:06
  * @FilePath: /cpptest/算法/leetcode/线性dp.md
 -->
 # 线性dp 在这里分为 递推类型，二维矩阵类型， 打家劫舍，状态机类型（买卖股票）
@@ -44,6 +44,60 @@ public:
         for(int i = 0;i<5;i++)res+=f[i];
         return res;
 
+    }
+};
+
+```
+
+3. 分隔数组以得到最大和 lc1043
+
+* 思路：记忆化搜索dp，枚举当前k内的最大值 + 前面范围最大和 就是当前最大值
+* 注意这类题一般f下标都比数组下标大一个
+
+```cpp
+class Solution {
+public:
+    static const int N = 510;
+    int f[N];
+    void dfs(int idx, int k, vector<int>&arr){
+        if(idx == arr.size()+1)return;
+        int maxv = -1;
+        for(int i = idx; idx - i < k && i >0;i-- ){
+            maxv = max(maxv, arr[i-1]);
+            f[idx] = max(f[idx], f[i-1] + (idx - i +1) * maxv);
+        }
+        dfs(idx +1 ,k , arr);
+    }
+    int maxSumAfterPartitioning(vector<int>& arr, int k) {
+        memset(f, -1, sizeof f);
+        f[0] = 0;
+        dfs(1,k,arr);
+        return f[arr.size()];
+    }
+};
+
+
+```
+
+4. 检查数组是否存在有效划分 lc2369
+
+* 思路同上，dp 枚举当前范围是否符合要求 + 前面范围符合要求，就是当前范围，注意这类题下标比数组大一个
+
+```cpp
+class Solution {
+public:
+    static const int N = 100010;
+    bool f[N];
+    bool validPartition(vector<int>& nums) {
+        f[0] = true;
+        for(int i = 2;i<=nums.size();i++){
+            f[i] |= f[i-2] && nums[i-2] == nums[i-1];
+            if(i>=3){
+                f[i] |= f[i-3] &&(nums[i-3] == nums[i - 2]-1 && nums[i - 2] == nums[i-1] - 1);
+                f[i] |= f[i-3] &&(nums[i-3] == nums[i - 2]  && nums[i - 2]== nums[i-1] );
+            }
+        }
+        return f[nums.size()];
     }
 };
 
