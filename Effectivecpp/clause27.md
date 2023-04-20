@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-04-05 22:09:58
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-04-07 11:38:42
- * @FilePath: /cpptest/Effectivecpp/clause27.md
+ * @LastEditTime: 2023-04-20 12:05:59
+ * @FilePath: /myLearning/Effectivecpp/clause27.md
 -->
 # clause27. 强制转换变量类型
 
@@ -36,7 +36,7 @@ double res = static_cast<double>(x)/y;
 
 ## static_cast 的注意点
 
-1. 虚函数中会出现基类指针和派生类指针指向同一个对象但地址不一样的情况（派生类指针会比基类指针向前偏移8个字节，为虚函数表）
+1. 基类中没有虚函数，派生出的子类中有虚函数的情况，会出现基类指针和派生类指针指向同一个对象但地址不一样的情况（派生类指针会比基类指针向前偏移8个字节，为虚函数表）
 
 ```cpp
 #include <iostream>
