@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-03-22 10:58:28
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-04-27 12:25:23
+ * @LastEditTime: 2023-04-27 20:29:32
  * @FilePath: /myLearning/算法/leetcode/字符串类型dp.md
 -->
 1. 5 最长回文子串
@@ -59,3 +59,5 @@
 11. 正则表达式匹配 10
 
 12. 最长字符串链1048
+
+13. 让字符串成为回文串的最少插入次数 1312
