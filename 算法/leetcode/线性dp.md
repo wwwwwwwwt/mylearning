@@ -2,14 +2,34 @@
  * @Author: zzzzztw
  * @Date: 2023-03-29 10:16:28
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-04-19 10:07:06
- * @FilePath: /cpptest/算法/leetcode/线性dp.md
+ * @LastEditTime: 2023-04-27 12:24:36
+ * @FilePath: /myLearning/算法/leetcode/线性dp.md
 -->
 # 线性dp 在这里分为 递推类型，二维矩阵类型， 打家劫舍，状态机类型（买卖股票）
 
 ## 递推类型
 
 1. 丑数2
+
+```cpp
+class Solution {
+public:
+    static const int N = 1700;
+    int f[N];
+    int nthUglyNumber(int n) {
+        f[0] = 1;
+        int q2 = 0, q3 = 0, q5 = 0;
+        for(int i = 1;i<n;i++){
+            f[i] = min(f[q2] * 2, min(f[q3] * 3, f[q5] * 5));
+            if(f[i] == f[q2] * 2)q2++;
+            if(f[i] == f[q3] * 3)q3++;
+            if(f[i] == f[q5] * 5)q5++;
+        }
+        return f[n-1];
+    }
+};
+
+```
 
 2.  统计字典序元音字符串的数目 lc 1641
 * 思路：递推：每个字母加在（他这个字母，和比他字典序小一个的字母）后面。
@@ -100,5 +120,38 @@ public:
         return f[nums.size()];
     }
 };
+
+```
+
+
+5. 剑指offer60 n个筛子的点数
+
+* 思路：f[i][j]是第i个筛子和为j的方案数，为前一个筛子减去1 - 6当前筛子的值的方案数总和，当j < k就break，总次数有pow（6，n）种
+  
+```cpp
+
+class Solution {
+public:
+    static const int N = 15;
+    int f[N][6*N];
+    vector<double> dicesProbability(int n) {
+        for(int i = 1;i<=6;i++)f[1][i] = 1;
+        for(int i = 2; i<=n;i++){
+            for(int j = i; j<=6*i;j++){
+                for(int k = 1; k<=6;k++){
+                    if( j < k)break;
+                    f[i][j] += f[i-1][j-k];
+                }
+            }
+        }
+        double total = pow(6, n);
+        vector<double>res;
+        for(int i = n; i<=6*n;i++){
+            res.push_back(f[n][i] / total);
+        }
+        return res;
+    }
+};
+
 
 ```

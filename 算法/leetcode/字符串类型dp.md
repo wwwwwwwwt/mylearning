@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-03-22 10:58:28
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-04-02 17:46:27
- * @FilePath: /cpptest/算法/leetcode/字符串类型dp.md
+ * @LastEditTime: 2023-04-27 12:25:23
+ * @FilePath: /myLearning/算法/leetcode/字符串类型dp.md
 -->
 1. 5 最长回文子串
 * 思路：双重循环，外层循环i循环当前字符串s[i], 内层循环从i开始，j大于等于0，内层倒着遍历，因为后面f[i][j]需要从f[i-1][j+1]转移回来，j+1应该先被更新.
@@ -57,3 +57,5 @@
 10. 只有两个键的键盘 650
     
 11. 正则表达式匹配 10
+
+12. 最长字符串链1048
