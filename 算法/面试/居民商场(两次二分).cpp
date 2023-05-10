@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-03-28 21:15:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-28 21:55:38
- * @FilePath: /cpptest/算法/面试/居民商场(两次二分).cpp
+ * @LastEditTime: 2023-05-10 09:38:07
+ * @FilePath: /myLearning/算法/面试/居民商场(两次二分).cpp
  */
 #include <bits/stdc++.h>
 using namespace std;
@@ -79,13 +79,13 @@ int res = l >=0 ?a[l] : -1;
 2. 小于目标得最后一个
 
 while(l<r){
-    int mid = l + r >>1;
+    int mid = l + r + 1>>1;
     if(a[mid] < target)l = mid;
     else r = mid - 1;
 }
 int res = l >=0 ?a[l] : -1;
 
-3. 大于等于目标最后一个
+3. 大于等于目标第一个
 
 while(l < r){
     int mid = l + r >> 1;
