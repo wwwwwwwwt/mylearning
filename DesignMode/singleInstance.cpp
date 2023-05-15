@@ -62,7 +62,8 @@ public:
         if(ins == nullptr){
             pthread_mutex_lock(&mutex);
             if(ins == nullptr){
-                ins = new SingleInstance(5);
+                ins = new SingleInstance(0);
+                count++;
             }
             pthread_mutex_unlock(&mutex);
         }
@@ -86,18 +87,20 @@ private:
     SingleInstance& operator=(const SingleInstance& other){return *this;}
     static SingleInstance* ins;
     static pthread_mutex_t mutex;
-    int count;
+    static int count;
 };
 
 SingleInstance* SingleInstance::ins = nullptr;
 pthread_mutex_t SingleInstance::mutex;
-
+int SingleInstance::count = 0;
 void work(){
    SingleInstance* ins = SingleInstance::GetInstance();
    this_thread::sleep_for(chrono::seconds(1));
-   ins->Addcnt();
-    this_thread::sleep_for(chrono::seconds(1));
-    cout<<ins->Getcnt()<<endl;
+    //  ins->Addcnt();
+   // this_thread::sleep_for(chrono::seconds(1));
+    cout<<ins->Getcnt()<<endl; 
+
+    //此处为了演示没有delete ins 实际生产环境需要delete防止内存泄漏
 }
 
 int main(){
@@ -109,7 +112,5 @@ int main(){
     t1.join();
     t2.join();
  
-
-
     return 0;
 }
