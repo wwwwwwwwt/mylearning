@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-16 09:17:42
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-05-16 10:05:30
+ * @LastEditTime: 2023-05-16 10:13:21
  * @FilePath: /myLearning/DesignMode/factory.cpp
  */
 #include <iostream>
