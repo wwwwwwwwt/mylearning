@@ -82,9 +82,9 @@ private:
         count = cnt;
         std::cout<<"懒汉"<<std::endl;
     };
-    SingleInstance(SingleInstance&&) = default;
-    SingleInstance(const SingleInstance&) = default;
-    SingleInstance& operator=(const SingleInstance& other){return *this;}
+    SingleInstance(SingleInstance&&) = delete;
+    SingleInstance(const SingleInstance&) = delete;
+    SingleInstance& operator=(const SingleInstance& other) = delete;
     static SingleInstance* ins;
     static pthread_mutex_t mutex;
     static int count;
