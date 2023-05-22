@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-03-22 09:14:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-22 11:18:35
- * @FilePath: /cpptest/算法/leetcode/最长上升子序列dp&&二分.md
+ * @LastEditTime: 2023-05-22 18:16:34
+ * @FilePath: /myLearning/算法/leetcode/最长上升子序列dp&&二分.md
 -->
 # 最长上升子序列
 最长上升子序列为二维dp和二分贪心两种做法，
@@ -171,9 +171,35 @@ long long maxTaxiEarnings(int n, vector<vector<int>>& rides) {
 
 ## 二分贪心典型题目
 1. 354 俄罗斯套娃
-* 最重要的点！按照宽从小到大排序，如果宽相等，按照长从大到小排序，防止二分时会出现 宽相等但长度后一个比前一个计算多次的错误答案
+* 最重要的点！按照宽从小到大排序，如果宽相等，按照长从大到小排序，防止二分时会出现 宽相等但长度后一个比前一个大而但实际上宽相等而不能嵌套，所导致宽相等计算的例子多次的错误答案
 
 ```cpp
+class Solution {
+public:
+    static const int N = 100010;
+    int f[N];
+    int maxEnvelopes(vector<vector<int>>& envelopes) {
+
+        sort(envelopes.begin(), envelopes.end(), [&](auto &a, auto &b){
+            if(a[0] == b[0])return a[1] > b[1];
+            else return a[0] < b[0];
+        });
+
+        int len = 0;
+        for(int i = 0; i < envelopes.size(); i++){
+            int l = 0, r = len;
+            while(l < r){
+                int mid = l + r + 1 >> 1;
+                if(f[mid] < envelopes[i][1])l = mid;
+                else r = mid - 1;
+            }
+            if(r == len)len++;
+            f[r + 1] = envelopes[i][1];
+        }
+        return len;
+    }
+};
+
 
 ```
 2. 马戏团思路一模一样同上
