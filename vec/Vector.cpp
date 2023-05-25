@@ -2,12 +2,12 @@
  * @Author: zzzzztw
  * @Date: 2023-02-02 20:08:23
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-02-25 16:40:23
- * @FilePath: /cpptest/Vec/Vector.cpp
+ * @LastEditTime: 2023-05-25 10:50:16
+ * @FilePath: /myLearning/vec/Vector.cpp
  */
 #include<iostream>
 #include "Vector.h"
-
+#include <vector>
 
 struct Vector3{
     float x = 0.0f, y = 0.0f,z = 0.0f;
