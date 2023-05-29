@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-25 19:01:28
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-05-25 19:40:24
+ * @LastEditTime: 2023-05-29 21:33:48
  * @FilePath: /myLearning/GrpcAndprotobuf/authclient/main.go
  */
 package main
@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 func main() {
@@ -26,17 +27,47 @@ func main() {
 
 	//	cli := userProto.NewAuthServiceClient(cc)
 
-	clientpool := NewuserClientPool("localhost:8000", 2)
-	resp, err := clientpool.Get().Login(context.Background(), &userProto.LoginRequest{
-		Username: "admin",
-		Password: "admin",
-	})
+	// clientpool := NewuserClientPool("localhost:8000", 2)
 
-	if err != nil {
-		panic(err)
+	// //ctx := metadata.AppendToOutgoingContext(context.Background(), "token", "123")
+	// md := metadata.Pairs("key", "val", "token", "456")
+	// ctx := metadata.NewOutgoingContext(context.Background(), md)
+	// resp, err := clientpool.Get().Login(ctx, &userProto.LoginRequest{
+	// 	Username: "admin",
+	// 	Password: "admin",
+	// })
+
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// fmt.Println(resp.Token, resp.User.Id)
+
+	// service a ctx
+	clientpool := NewuserClientPool("localhost:8000", 2)
+	//md := metadata.Pairs("key", "value", "token", "123")
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "token", "123")
+
+	{
+		resp, err := clientpool.Get().Login(ctx, &userProto.LoginRequest{
+			Username: "",
+			Password: "admin",
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(resp.Token, resp.User.Id)
 	}
 
-	fmt.Println(resp.Token, resp.User.Id)
+	{
+		_, err := clientpool.Get().Register(ctx, &userProto.RegisterRequest{
+			Username: "",
+			Password: "",
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 }
 

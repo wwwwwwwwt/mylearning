@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-25 15:55:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-05-25 21:44:51
+ * @LastEditTime: 2023-05-29 21:44:04
  * @FilePath: /myLearning/GrpcAndprotobuf/readme.md
 -->
 # readme
@@ -281,5 +281,153 @@ func NewAuthService() *Authservice {
 
 func (*Authservice) Login(ctx context.Context, username string, password string) (*model.UserModel, error) {
 	return &model.UserModel{Id: 1}, nil
+}
+```
+
+6. GRPC中间件的使用
+
+* 洋葱模型，一层一层穿透进去，到了最底层进行核心逻辑， 然后再一层一层穿透出去
+* 一元拦截器与链式调用
+```go
+// 在internal/grpc/server.go中
+s := grpc.NewServer(
+		// grpc.UnaryInterceptor(
+		// 	func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		// 		一元拦截器
+		// 		// 中间件的使用，洋葱模型
+		// 		//前处理
+		// 		t1 := time.Now()
+
+		// 		//陷入核心逻辑
+		// 		resp, err = handler(ctx, req)
+
+		// 		//后处理
+		// 		fmt.Println("耗时：", time.Since(t1))
+		// 		return resp, err
+		// 	},
+		// )
+		grpc.ChainUnaryInterceptor(
+			//链式调用
+			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+				// 中间件的使用，洋葱模型
+				//前处理
+				//t1 := time.Now()
+				fmt.Println("login1 before")
+				//陷入核心逻辑
+				resp, err = handler(ctx, req)
+				fmt.Println("login1 after")
+
+				//后处理
+				//	fmt.Println("耗时：", time.Since(t1))
+				return resp, err
+			},
+			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+				fmt.Println("login2 before")
+				//陷入核心逻辑
+				resp, err = handler(ctx, req)
+				fmt.Println("login2 after")
+				return resp, err
+			},
+			func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+				fmt.Println("login3 before")
+				//陷入核心逻辑
+				resp, err = handler(ctx, req)
+				fmt.Println("login3 after")
+				return resp, err
+			},
+
+			// login1 before
+			// login2 before
+			// login3 before
+			// 2023/05/29 18:46:34 user login->  admin admin
+			// login3 after
+			// login2 after
+			// login1 after
+		),
+	)
+
+```
+
+* 鉴权 auth中间件
+* 使用这个包 "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+* 使用方法：
+```go
+internal/grpc/server.go
+在启动服务时，将中间件作为拦截器注册到NewServer中。
+s := grpc.NewServer(
+	grpc.UnaryInterceptor(
+		auth.UnaryServerInterceptor(func(ctx context.Context) (context.Context, error) {
+			// 期望： key:value  key = token ,  value = jwt / 123
+			// 1. 从ctx取出token信息
+			// metadata 作用是承载grpc请求中，请求头中的信息header。请求体是我们之前定义的protobuf中的消息
+			// 客户端向服务端传数据，客户端时outgoing， 客户端时incoming
+			// 2. 客户端发来的格式：key：val， token， 123， 收到使用md.Get("指定字段")取出后是一个string切片
+			// 	md := metadata.Pairs("key", "val", "token", "123")
+			//  ctx := metadata.NewOutgoingContext(context.Background(), md)
+			md, ok := metadata.FromIncomingContext(ctx)
+			// 2. 验证token
+			if !ok {
+				return ctx, status.Error(codes.Unauthenticated, "noAuthorized")
+			}
+
+			token := md.Get("token") // 取出token
+			key := md.Get("key")
+			log.Println("key -> ", key)
+			if len(token) > 0 {
+				tk := token[0]
+				//验证token， 拦截||放过数据
+				if tk == "123" {
+					return ctx, nil
+				}
+				return ctx, status.Error(codes.Unauthenticated, "noAuthorized")
+			}
+			return ctx, status.Error(codes.Unauthenticated, "noAuthorized")
+
+		},
+		)),
+)
+
+相对应的，客户端需要提供自己的token来进行鉴权
+	//ctx := metadata.AppendToOutgoingContext(context.Background(), "token", "123")
+	md := metadata.Pairs("key", "val", "token", "123")
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+	resp, err := clientpool.Get().Login(ctx, &userProto.LoginRequest{
+		Username: "admin",
+		Password: "admin",
+	})
+
+鉴权模块提供这个函数，如果重写这个函数继承这个接口根据客户端调用的rpc方法名字来进行判断执行哪个鉴权逻辑
+func (*AuthController) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) { 
+	// 重写这个函数，就会绕过Newserver中的逻辑，根据服务端调用的rpc方法（fullMethodName）来进行判断/
+	fmt.Println(fullMethodName)
+
+	if fullMethodName == "/proto.AuthService/Login" { //现在是login方法时就饶过，不验证token
+		return ctx, nil
+	}
+	// 期望： key:value  key = token ,  value = jwt / 123
+	// 1. 从ctx取出token信息
+	// metadata 作用是承载grpc请求中，请求头中的信息header。请求体是我们之前定义的protobuf中的消息
+	// 客户端向服务端传数据，客户端时outgoing， 客户端时incoming
+	// 2. 客户端发来的格式：key：val， token， 123， 收到使用md.Get("指定字段")取出后是一个string切片
+	// 	md := metadata.Pairs("key", "val", "token", "123")
+	//  ctx := metadata.NewOutgoingContext(context.Background(), md)
+	md, ok := metadata.FromIncomingContext(ctx)
+	// 2. 验证token
+	if !ok {
+		return ctx, status.Error(codes.Unauthenticated, "noAuthorized")
+	}
+
+	token := md.Get("token") // 取出token
+	key := md.Get("key")
+	log.Println("key -> ", key)
+	if len(token) > 0 {
+		tk := token[0]
+		//验证token， 拦截||放过数据
+		if tk == "123" {
+			return ctx, nil
+		}
+		return ctx, status.Error(codes.Unauthenticated, "noAuthorized")
+	}
+	return ctx, status.Error(codes.Unauthenticated, "noAuthorized")
 }
 ```

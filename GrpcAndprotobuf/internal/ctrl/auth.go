@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-25 16:27:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-05-25 21:42:41
+ * @LastEditTime: 2023-05-29 21:32:22
  * @FilePath: /myLearning/GrpcAndprotobuf/internal/ctrl/auth.go
  */
 package ctrl
@@ -12,6 +12,7 @@ import (
 	userProto "GrpcAndprotobuf/proto"
 	"GrpcAndprotobuf/service"
 	"context"
+	"fmt"
 	"log"
 )
 
@@ -53,4 +54,13 @@ func (a *AuthController) Login(ctx context.Context, resq *userProto.LoginRequest
 	}
 	//最终返回自己的参数
 	return resp, nil
+}
+
+func (a *AuthController) Register(ctx context.Context, req *userProto.RegisterRequest) (*userProto.RegisterResponse, error) {
+	userinfo, err := userFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(userinfo)
+	return &userProto.RegisterResponse{}, nil
 }
