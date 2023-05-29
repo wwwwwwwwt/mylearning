@@ -58,9 +58,9 @@ int main(){
 
 class SingleInstance{
 public:
-    static SingleInstance* GetInstance(){
-        if(ins == nullptr){
-            pthread_mutex_lock(&mutex);
+    static SingleInstance* GetInstance(){ // 实际生产中，最好使用shared_ptr; std::shared_ptr<SingleInstance>GetInst()
+        if(ins == nullptr){                 // static std::shared_ptr<SingleInstance> ins;
+            pthread_mutex_lock(&mutex);        // 声明 std::shared_ptr<SingleInstance> SingleInstance ::ins = nullptr;
             if(ins == nullptr){
                 ins = new SingleInstance(0);
                 count++;
