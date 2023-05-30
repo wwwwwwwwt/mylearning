@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-29 14:03:40
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-05-29 15:51:09
+ * @LastEditTime: 2023-05-30 20:17:41
  * @FilePath: /myLearning/boostasio/endpoints..cpp
  */
 
@@ -10,6 +10,7 @@
 #include <string>
 #include <iostream>
 #include "endpoint.h"
+#include <memory>
 using namespace boost;
 using namespace std;
 
@@ -135,4 +136,120 @@ int accept_new_connection(){
         std::cout<<"error code: "<<e.code()<<" message: "<<e.what();
         return e.code().value(); 
     }
+}
+
+
+//asio网络库中使用buffer麻烦的方式
+void use_const_buffer(){
+    std::string buf = "Hello world";
+    asio::const_buffer asio_buf(buf.c_str(), buf.size());
+    std::vector<asio::const_buffer>buffers_seq;
+    buffers_seq.push_back(asio_buf); // 最终的buffer_seq就是可以传递给send的类型， 可以直接使用buffer转换为send需要的类型。
+}
+
+// 简单的方式
+void use_const_str(){
+    asio::const_buffers_1 output_buf = asio::buffer("hello, world");
+}
+// 字符串数组
+void use_buffer_array(){
+    const size_t BUF_SIZE_BYTES = 20;
+    std::unique_ptr<char[]>buf(new char[BUF_SIZE_BYTES]);
+    auto input_buf = asio::buffer(static_cast<void*>(buf.get()), BUF_SIZE_BYTES);
+}
+
+
+//使用streanbuf，将输入输出流和streambuf绑定，可以实现流式输入和输出
+void use_stream_buffer(){
+
+    asio::streambuf buf;
+
+    std::ostream output(&buf);
+
+    output<<"Message\nMessage2";
+
+    std::istream input(&buf);
+
+    std::string message1;
+
+    std::getline(input, message1);
+
+}
+
+//将buf中的数据发送给sock， 一点一点发，每次发了多少会返回给用户端
+void write_to_socket(asio::ip::tcp::socket& sock){
+
+    std::string buf = "hello world";
+    std::size_t total_bytes_written = 0;
+
+    // 循环发送
+    //wirte_som 返回每次写入的字节数
+    while(total_bytes_written != buf.size()){
+        total_bytes_written += sock.write_some(asio::buffer(buf.c_str() + total_bytes_written, buf.size() - total_bytes_written));
+    }
+}
+
+
+
+//模拟同步客户端，先创建对端地址，创建上下文，创建socket，使用socket连接到对端
+int send_data_by_write_some(){
+    std::string raw_ip_address = "192.168.3.11";
+    unsigned short port_num = 3333;
+
+    try{
+        asio::ip::tcp::endpoint ep(asio::ip::address_v4::from_string(raw_ip_address), port_num);
+        asio::io_context ioc;
+        asio::ip::tcp::socket sock(ioc, ep.protocol());
+        sock.connect(ep);
+        //write_to_socket(sock); // 一点一点发送
+        /*
+            一次性全发送完，发送完再通知
+            阻塞到全发送完，返回发送的字节数，返回值小于等于0就说明出现了错误
+        */
+        std::string buf = "hello world";
+        int sendlength = sock.send(asio::buffer(asio::buffer(buf.c_str(), buf.size())));
+        if(sendlength <=0)return 0;
+
+    }catch(boost::system::system_error& e){
+        std::cout<<"Error failed! error code "<<e.code().value()<<" message is "<<e.what()<<std::endl;
+        return e.code().value();
+    }
+}
+
+//读到数据
+std::string read_from_socket(asio::ip::tcp::socket& sock){
+    const unsigned short MESSAGE_SIZE = 7;
+    char buf[MESSAGE_SIZE];
+    std::size_t total_bytes_read = 0;
+    while(total_bytes_read != MESSAGE_SIZE){
+        total_bytes_read += sock.read_some(asio::buffer(buf + total_bytes_read, MESSAGE_SIZE - total_bytes_read));
+    }
+
+    return std::string(buf, total_bytes_read);
+}
+
+//模仿客户端读数据
+
+int read_data_by_read_some(){
+    
+    std::string raw_ip_address = "127.0.0.1";
+    unsigned short port_num = 3333;
+    try{
+        asio::ip::tcp::endpoint ep(asio::ip::address::from_string(raw_ip_address), port_num);
+        asio::io_context ioc;
+        asio::ip::tcp::socket sock(ioc, ep.protocol());
+        sock.connect(ep);
+        // read_from_socket(sock);一点一点读
+        const size_t BUF_SIZE_BYTES = 20;
+        std::unique_ptr<char[]>buf(new char[BUF_SIZE_BYTES]);
+        auto input_buf = asio::buffer(static_cast<void*>(buf.get()), BUF_SIZE_BYTES);
+        int length = sock.receive(input_buf);
+        if(length <= 0)return 0;
+
+
+    }catch(boost::system::system_error& e){
+        std::cout<<"Error failed! error code "<<e.code().value()<<" message is "<<e.what()<<std::endl;
+        return e.code().value();
+    }
+
 }

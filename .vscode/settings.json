@@ -95,6 +95,7 @@
         "socket": "cpp",
         "timer": "cpp",
         "sched.h": "c",
-        "cassert": "cpp"
+        "cassert": "cpp",
+        "strstream": "cpp"
     }
 }
