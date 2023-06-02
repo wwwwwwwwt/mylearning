@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-31 14:55:05
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-01 22:30:46
+ * @LastEditTime: 2023-06-02 15:03:33
  * @FilePath: /myLearning/boostasio/asioApi/session.cpp
  */
 #include "session.h"
@@ -76,7 +76,7 @@ void Session::WriteCallBack(const boost::system::error_code& ec, std::size_t byt
     }
 
     if(!_send_queue.empty()){
-        //继续取出对手元素，接着发出去。第一次发不需要偏移量。
+        //继续取出队首元素，接着发出去。第一次发不需要偏移量。
         auto &send_data = _send_queue.front();
         _sock->async_write_some(asio::buffer(send_data->_msg, send_data->_total_len), std::bind(&Session::WriteCallBack, this, std::placeholders::_1,
             std::placeholders::_2));
