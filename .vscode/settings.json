@@ -96,6 +96,7 @@
         "timer": "cpp",
         "sched.h": "c",
         "cassert": "cpp",
-        "strstream": "cpp"
+        "strstream": "cpp",
+        "*.ipp": "cpp"
     }
 }
