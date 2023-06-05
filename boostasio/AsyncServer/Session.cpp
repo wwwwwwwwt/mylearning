@@ -5,6 +5,7 @@ using namespace std;
 
 void Session::Start(){
     memset(_data, 0, max_length);
+    // 绑定一个读事件，填进底层的epoll时间表，并将数据自动的读到buffer中，proactor的特性，异步处理
     _socket.async_read_some(boost::asio::buffer(_data, max_length), std::bind(&Session::handler_read, this,
         std::placeholders::_1, std::placeholders::_2));
 }
@@ -43,6 +44,7 @@ Server::Server(boost::asio::io_context& ioc, short port):_ioc(ioc), _acceptor(io
 }
 
 void Server::start_accept(){
+    // session类似于服务人员，acceptor类似大堂经理，大堂经理把任务给服务人员，叫他去处理。
     Session* new_session = new Session(_ioc);
     _acceptor.async_accept(new_session->Socket(), std::bind(&Server::handle_accept, this, new_session, std::placeholders::_1));//进来一个连接，服务器使用newsession保存这个连接。
 }
@@ -53,7 +55,7 @@ void Server::handle_accept(Session* new_session, const boost::system::error_code
     }else{
         delete new_session;
     }
-
+    // 处理完了，在创建一个startaccept 去处理新连接
     start_accept();
 }
 
