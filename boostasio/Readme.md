@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-30 18:40:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-02 15:15:47
+ * @LastEditTime: 2023-06-05 14:04:47
  * @FilePath: /myLearning/boostasio/Readme.md
 -->
 # 学习boost::asio网络库
@@ -332,5 +332,110 @@ private:
     std::shared_ptr<MsgNode>_recv_node;
     bool _recv_pending;
 };
+
+```
+
+# Async 官方案例：
+
+1. Session会话类管理并处理新进来的连接, 根据其绑定的读或写回调函数执行处理。
+
+```cpp
+
+class Session{
+
+public:
+    Session(boost::asio::io_context& ioc):_socket(ioc){
+
+    }
+    tcp::socket& Socket(){
+        return _socket;
+    }
+    // 监听对服务器的读和写
+    void Start();
+
+
+private:
+    //读和写的回调函数。
+    void handler_read(const boost::system::error_code& err, std::size_t bytes_transferred);
+    void handler_write(const boost::system::error_code& err);
+    tcp::socket _socket;
+    //简单的固定一个长度
+    enum {max_length = 1024};
+    char _data[max_length];
+};
+oid Session::Start(){
+    memset(_data, 0, max_length);
+    // 绑定一个读事件，填进底层的epoll时间表，并将数据自动的读到buffer中，proactor的特性，异步处理
+    _socket.async_read_some(boost::asio::buffer(_data, max_length), std::bind(&Session::handler_read, this,
+        std::placeholders::_1, std::placeholders::_2));
+}
+
+void Session::handler_read(const boost::system::error_code& err, std::size_t bytes_transferred){
+
+    if(!err){
+        cout<<"server receice data is "<<_data<<endl;
+        boost::asio::async_write(_socket, boost::asio::buffer(_data, bytes_transferred),
+            std::bind(&Session::handler_write, this, std::placeholders::_1));
+        
+
+    }
+    else{
+        cout<<"read err! "<<err.value()<<endl;
+        delete this; // 生产环境中不会这么做
+    }
+}
+
+void Session::handler_write(const boost::system::error_code& err){
+    if(!err){
+        memset(_data, 0, sizeof _data);
+        cout<<"server receive data is "<< _data<<endl;
+        _socket.async_read_some(boost::asio::buffer(_data, sizeof _data), std::bind(&Session::handler_read, this, std::placeholders::_1,
+        std::placeholders::_2));
+    }else{
+        cout<<"write err! "<<err.value()<<endl;
+        delete this; // 生产环境中不会这么做
+    }
+}
+
+```
+
+2. Server类负责创建一个acceptor，相当于大堂经理，接收新进来的连接并交给Session根据注册的回调函数去处理连接。
+
+```cpp
+class Server{
+public:
+    Server(boost::asio::io_context& ioc, short port);
+
+private:
+    void start_accept();
+    void handle_accept(Session* new_session, const boost::system::error_code& ec);
+
+    boost::asio::io_context& _ioc; //私有，上下文不允许拷贝构造
+    tcp::acceptor _acceptor;
+};
+
+
+Server::Server(boost::asio::io_context& ioc, short port):_ioc(ioc), _acceptor(ioc, tcp::endpoint(tcp::v4(), port))
+{
+    std::cout<<"Server start success on port"<<port<<std::endl;
+    start_accept();
+}
+
+void Server::start_accept(){
+    // session类似于服务人员，acceptor类似大堂经理，大堂经理把任务给服务人员，叫他去处理。
+    Session* new_session = new Session(_ioc);
+    _acceptor.async_accept(new_session->Socket(), std::bind(&Server::handle_accept, this, new_session, std::placeholders::_1));//进来一个连接，服务器使用newsession保存这个连接。
+}
+
+void Server::handle_accept(Session* new_session, const boost::system::error_code& ec){
+    if(!ec){
+        new_session->Start();
+    }else{
+        delete new_session;
+    }
+    // 处理完了，在创建一个startaccept 去处理新连接
+    start_accept();
+}
+
 
 ```

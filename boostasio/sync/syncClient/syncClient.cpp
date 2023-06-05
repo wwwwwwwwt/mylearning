@@ -1,3 +1,10 @@
+/*
+ * @Author: zzzzztw
+ * @Date: 2023-05-31 12:43:19
+ * @LastEditors: Do not edit
+ * @LastEditTime: 2023-06-05 19:42:02
+ * @FilePath: /myLearning/boostasio/sync/syncClient/syncClient.cpp
+ */
 #include <boost/asio.hpp>
 #include <iostream>
 #include <string>
@@ -26,7 +33,7 @@ int main(){
         char request[MAX_LENGTH];
         std::cin.getline(request, MAX_LENGTH);
         size_t request_len = strlen(request);
-        boost::asio::write(sock, boost::asio::buffer(static_cast<void*>(request), request_len));
+        boost::asio::write(sock, boost::asio::buffer(request, request_len));
 
         // 接收服务端发来的消息。
         char reply[MAX_LENGTH];
