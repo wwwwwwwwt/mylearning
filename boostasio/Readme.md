@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-30 18:40:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-05 20:57:19
+ * @LastEditTime: 2023-06-06 16:05:47
  * @FilePath: /myLearning/boostasio/Readme.md
 -->
 # 学习boost::asio网络库
@@ -441,5 +441,233 @@ void Server::handle_accept(Session* new_session, const boost::system::error_code
 ```
 # 改进官网案例，利用智能指针模拟闭包延长Session会话生命周期 + 增加一个发送队列 （AsyncServer/async01）
 
+1. 为什么要延长Session会话声明周期？
+答：极端情况，客户端关闭，服务逻辑同时触发了读回调和写回调函数，导致进入错误逻辑判断时，重复删除一个会话Session类的指针，造成二次析构的问题
 
+2. 解决方案，通过智能指针管理Session类，将acceptor接收的新的链接保存在Session类型的智能指针类中。由于智能指针引用计数为0时，自动析构，我们将其放入一个map中，自动将其计数+1，所以当我们将其从map中删除时，其计数才会为0.
+3. map的key为这个连接的uuid，val为这个连接的智能指针
+
+```cpp
+class CServer
+{
+public:
+    CServer(boost::asio::io_context& io_context, short port);
+    void ClearSession(std::string);
+private:
+    void HandleAccept(shared_ptr<CSession>, const boost::system::error_code & error);
+    void StartAccept();
+    boost::asio::io_context &_io_context;
+    short _port;
+    tcp::acceptor _acceptor;
+    std::map<std::string, shared_ptr<CSession>> _sessions;
+};
+```
+
+4. 处理链接:虽然是一个局部变量，但通过bind操作，将其以值传递给bind，计数+1，保证了其不会释放。在处理连接的回调函数中，处理链接并将uuid加入map，保证我们erase前智能指针不会被释放
+
+```cpp
+void CServer::StartAccept() {
+    shared_ptr<CSession> new_session = make_shared<CSession>(_io_context, this);
+    _acceptor.async_accept(new_session->GetSocket(), std::bind(&CServer::HandleAccept, this, new_session, placeholders::_1));
+
+}
+
+
+void CServer::HandleAccept(shared_ptr<CSession> new_session, const boost::system::error_code& error){
+    if (!error) {
+        new_session->Start();
+        _sessions.insert(make_pair(new_session->GetUuid(), new_session));
+    }
+    else {
+        cout << "session accept failed, error is " << error.what() << endl;
+    }
+    StartAccept();
+}
+```
+
+5. 构造伪闭包的思路
+
+* 利用智能指针被复制或使用引用计数加一的原理保证内存不被回收
+*  bind操作可以将值绑定在一个函数对象上生成新的函数对象，如果将智能指针作为参数绑定给函数对象，那么智能指针就以值的方式被新函数对象使用，那么智能指针的生命周期将和新生成的函数对象一致，从而达到延长生命的效果。
+
+6. 为什么要增加一个发送队列
+答：全双工通信方式，服务器一直监听写事件，接收对端数据，可随时发送数据给对端，因为多次发送时，异步的发送要保证回调触发后再次发送才能确保数据是有序的，
+
+7. 具体做法：
+   1. 设计数据节点存储数据
+    ```cpp
+    class MsgNode
+    {
+        friend class CSession;
+    public:
+        MsgNode(char * msg, int max_len) {
+            _data = new char[max_len];
+            memcpy(_data, msg, max_len);
+        }
+        ~MsgNode() {
+            delete[] _data;
+        }
+    private:
+        int _cur_len;
+        int _max_len;
+        char* _data;
+    };
+    1  _cur_len表示数据当前已处理的长度(已经发送的数据或者已经接收的数据长度)，因为一个数据包存在未发送完或者未接收完的情况。
+    2  _max_len表示数据的总长度。
+    3  _data表示数据域，已接收或者已发送的数据都放在此空间内。
+    ```
+    2. 封装发送接口
+    ```cpp
+    void CSession::Send(char* msg, int max_length) {
+	
+	std::lock_guard<std::mutex> lock(_send_lock);
+	bool pending = false;
+	if (_send_que.size() > 0) {
+		pending = true;
+	}
+	_send_que.push(make_shared<MsgNode>(msg, max_length));
+	if (pending) {
+		return;
+	}
+	auto& msgnode = _send_que.front();
+	boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len), 
+		std::bind(&CSession::HandleWrite, this, std::placeholders::_1, shared_from_this()));
+    }
+    void CSession::HandleWrite(const boost::system::error_code& error, shared_ptr<CSession> _self_shared) {
+	if (!error) {
+		std::lock_guard<std::mutex> lock(_send_lock);
+		_send_que.pop();
+		if (!_send_que.empty()) {
+			auto &msgnode = _send_que.front();
+			boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len),
+				std::bind(&CSession::HandleWrite, this, std::placeholders::_1, _self_shared));
+		}
+	}
+	else {
+		std::cout << "handle write failed, error is " << error.value() << endl;
+		Close();
+		_server->ClearSession(_uuid);
+	}
+    }
+   1. 首先在CSession类里新增一个队列存储要发送的数据，因为我们不能保证每次调用发送接口的时候上一次数据已经发送完，就要把要发送的数据放入队列中，通过回调函数不断地将队列中的消息发送完。
+   2. 而且我们不能保证发送的接口和回调函数的接口在一个线程，所以要增加一个锁保证发送队列安全性。
+   同时我们新增一个发送接口Send
+
+    ```
 # 切包思想处理粘包现象，消息长度 + 消息体 （AsyncServer/async02）
+1. 到目前为止，框架的逻辑是CServer类管理新链接，核心是acceptor，每新到一个连接就创建一个新的CSession类，管理新的会话，并将这个会话的uuid和智能指针放进map，用于管理。
+2. CSession类封装了一个msgnode用于管理发送或读入的消息，其有总长度和现在已经处理完的长度，还有一个data指针用于处理待处理的数据。CSession类管理了用于通信的socket文件描述符，这个连接的uuid， 接收或发送数据的缓冲区，处理读操作和写操作的回调函数（底层事件驱动，tcp缓冲区有无数据），异步发送队列
+3. 粘包产生的原因：
+   1. 因为TCP底层通信是面向字节流的，TCP只保证发送数据的准确性和顺序性，字节流以字节为单位，客户端每次发送N个字节给服务端，N取决于当前客户端的发送缓冲区是否有数据，比如发送缓冲区总大小为10个字节，当前有5个字节数据(上次要发送的数据比如’loveu’)未发送完，那么此时只有5个字节空闲空间，我们调用发送接口发送hello world！其实就是只能发送Hello给服务器，那么服务器一次性读取到的数据就很可能是loveuhello。而剩余的world！只能留给下一次发送，下一次服务器接收到的就是world！
+   2.   客户端的发送频率远高于服务器的接收频率，就会导致数据在服务器的tcp接收缓冲区滞留形成粘连，比如客户端1s内连续发送了两个hello world！,服务器过了2s才接收数据，那一次性读出两个hello world！。
+   3. tcp底层的安全和效率机制不允许字节数特别少的小包发送频率过高，tcp会在底层累计数据长度到一定大小才一起发送，比如连续发送1字节的数据要累计到多个字节才发送，可以了解下tcp底层的Nagle算法。
+   4. 再就是我们提到的最简单的情况，发送端缓冲区有上次未发送完的数据或者接收端的缓冲区里有未取出的数据导致数据粘连。
+4. 处理粘包：定义消息格式，消息长度 + 消息内容
+
+```cpp
+void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_transferred, shared_ptr<CSession> _self_shared){
+	if(!error){
+		int copy_len = 0;
+		while(bytes_transferred > 0){
+			if(!_b_head_parse){
+				//当前收到的数据 加上本来的数据还没到头部长度，就注册回调函数，继续接收
+				if(bytes_transferred + _recv_head_node->_cur_len < HEAD_LENGTH){
+					memcpy(_recv_head_node->_data + _recv_head_node->_cur_len, _data + copy_len, bytes_transferred);
+					_recv_head_node->_cur_len += bytes_transferred;
+					memset(_data, 0, sizeof _data);
+					_socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH), std::bind(&CSession::HandleRead, this, 
+					std :: placeholders::_1, std::placeholders::_2, _self_shared));
+					return;
+				}
+
+				//当前收到的数据加上已有的数据比头部多了,填满head再把剩下的向body中填
+				int head_remain = HEAD_LENGTH - _recv_head_node->_cur_len;
+				memcpy(_recv_head_node->_data + _recv_head_node->_cur_len, _data + copy_len, head_remain);
+				copy_len += head_remain;
+				bytes_transferred -= head_remain;
+
+				//从头部获取这个消息中实际的数据长度
+				short data_len = 0;
+				memcpy(&data_len, _recv_head_node->_data, HEAD_LENGTH);
+				cout<<"data_len is "<<data_len<<endl;
+
+				//如果头部长度非法，直接关闭连接
+				if(data_len > MAX_LENGTH){
+					std::cout << "invalid data length is " << data_len << endl;
+					_server->ClearSession(_uuid);
+					return;		
+				}
+
+				//拿到头部的实际消息长度，开始处理消息体
+				_recv_msg_node = std::make_shared<MsgNode>(data_len);
+				//如果当前剩下的消息，还不够实际消息的全部长度，就全部填入消息体，然后接着读
+				if(bytes_transferred < data_len){
+					memcpy(_recv_msg_node->_data + _recv_msg_node->_cur_len, _data + copy_len, bytes_transferred);
+					_recv_msg_node->_cur_len += bytes_transferred;
+					memset(_data, 0, MAX_LENGTH);
+					_socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH), std::bind(&CSession::HandleRead, this, 
+					std::placeholders::_1, std::placeholders::_2, _self_shared));
+					//走到这里逻辑是头部处理完成了，消息体还没满
+					_b_head_parse = true;
+					return;
+				}
+
+				// 否则，当前剩下的消息数据，满足这个包内容的实际长度，就将实际内容大小的消息长度，填充进消息体，然后就解析完这个包。重新将解析头标志位归false.
+				// 如果剩下数据长度还有多余的，就continue，否则绑定回调函数，return
+				memcpy(_recv_msg_node->_data + _recv_msg_node->_cur_len, _data + copy_len, data_len);
+				_recv_msg_node->_cur_len += data_len;
+				copy_len += data_len;
+				bytes_transferred -= data_len;
+				_recv_msg_node->_data[_recv_msg_node->_total_len] = '\0';
+				cout<<"receive data is "<<_recv_msg_node->_data<<endl;
+
+				// 拿到数据包后的逻辑处理，此处暂时发送回客户端
+				Send(_recv_msg_node->_data, _recv_msg_node->_total_len);
+				
+				// 继续轮询剩余的未处理数据
+				_b_head_parse = false;
+				_recv_head_node->Clear();
+				if(bytes_transferred <= 0){
+					memset(_data, 0, MAX_LENGTH);
+					_socket.async_read_some(boost::asio::buffer(static_cast<void *>(_data), MAX_LENGTH), std::bind(&CSession::HandleRead, this,
+					std::placeholders::_1, std::placeholders::_2, _self_shared));
+					return;
+				}
+				// 还有剩余的，继续轮询处理下一个包的数据
+				continue;
+			}
+
+			//如果这时候状态是已经处理完头部了，那么剩下的数据就要向内容里填
+			int remain_msg = _recv_msg_node->_total_len - _recv_msg_node->_cur_len;
+			//如果当前读到的，小于实际总的，就全填进去，注册读回调，接着读
+			if(bytes_transferred < remain_msg){
+				memcpy(_recv_msg_node->_data + _recv_msg_node->_cur_len, _data + copy_len, bytes_transferred);
+				_recv_msg_node->_cur_len += bytes_transferred;
+				memset(_data, 0, MAX_LENGTH);
+				_socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH), std::bind(&CSession::HandleRead, this, 
+				std::placeholders::_1, std::placeholders::_2, _self_shared));
+				return;
+			}
+			memcpy(_recv_msg_node->_data + _recv_msg_node->_cur_len, _data + copy_len, remain_msg);
+			_recv_msg_node->_cur_len += remain_msg;
+			bytes_transferred -= remain_msg;
+			copy_len += remain_msg;
+			_recv_msg_node->_data[_recv_msg_node->_total_len] = '\0';
+			cout<<"receive data is "<<_recv_msg_node->_data<<endl;
+
+			// 否则，读到这个包所有数据，拿到数据包后的逻辑处理，此处暂时发送回客户端
+			Send(_recv_msg_node->_data, _recv_msg_node->_total_len);
+			_recv_head_node->Clear();
+			if(bytes_transferred <= 0){
+				memset(_data, 0, MAX_LENGTH);
+				_socket.async_read_some(boost::asio::buffer(static_cast<void *>(_data), MAX_LENGTH), std::bind(&CSession::HandleRead, this,
+				std::placeholders::_1, std::placeholders::_2, _self_shared));
+				return;
+			}
+			continue;
+		}
+	}
+
+}
+```
+
