@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-30 18:40:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-05 14:04:47
+ * @LastEditTime: 2023-06-05 20:57:19
  * @FilePath: /myLearning/boostasio/Readme.md
 -->
 # 学习boost::asio网络库
@@ -439,3 +439,7 @@ void Server::handle_accept(Session* new_session, const boost::system::error_code
 
 
 ```
+# 改进官网案例，利用智能指针模拟闭包延长Session会话生命周期 + 增加一个发送队列 （AsyncServer/async01）
+
+
+# 切包思想处理粘包现象，消息长度 + 消息体 （AsyncServer/async02）

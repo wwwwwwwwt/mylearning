@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:49:32
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-05 19:55:27
+ * @LastEditTime: 2023-06-05 20:13:52
  * @FilePath: /myLearning/boostasio/AsyncServer/async/CSession.cpp
  */
 #include "CSession.h"
@@ -29,8 +29,9 @@ void CSession::Start(){
 }
 
 void CSession::Send(char* msg, int max_length) {
-	bool pending = false;
+	
 	std::lock_guard<std::mutex> lock(_send_lock);
+	bool pending = false;
 	if (_send_que.size() > 0) {
 		pending = true;
 	}

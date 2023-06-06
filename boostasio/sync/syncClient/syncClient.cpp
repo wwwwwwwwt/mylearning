@@ -2,51 +2,53 @@
  * @Author: zzzzztw
  * @Date: 2023-05-31 12:43:19
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-05 19:42:02
+ * @LastEditTime: 2023-06-06 14:30:40
  * @FilePath: /myLearning/boostasio/sync/syncClient/syncClient.cpp
  */
-#include <boost/asio.hpp>
 #include <iostream>
-#include <string>
-using namespace boost;
+#include <boost/asio.hpp>
 using namespace std;
-const int MAX_LENGTH = 1024;
+using namespace boost::asio::ip;
+const int MAX_LENGTH = 1024*2;
+const int HEAD_LENGTH = 2;
+int main()
+{
+	try {
+		//创建上下文服务
+		boost::asio::io_context   ioc;
+		//构造endpoint
+		tcp::endpoint  remote_ep(address::from_string("127.0.0.1"), 10086);
+		tcp::socket  sock(ioc);
+		boost::system::error_code   error = boost::asio::error::host_not_found; ;
+		sock.connect(remote_ep, error);
+		if (error) {
+			cout << "connect failed, code is " << error.value() << " error msg is " << error.message();
+			return 0;
+		}
 
-int main(){
-    try{
-        // 创建上下文服务
-        asio::io_context ioc;
-        // 构造endpoint
-        std::string addr = "127.0.0.1";
-        unsigned short port_num = 10086; 
-        asio::ip::tcp::endpoint ep(asio::ip::address::from_string(addr), port_num);
-        asio::ip::tcp::socket sock(ioc, ep.protocol());
-        boost:system::error_code err = asio::error::host_not_found;
-        sock.connect(ep, err);
-        if(err){
-            cout<<"connect failed, code is "<<err.value()<<"error msg is "<<err.message()<<endl;
-            return 0;
-        }  
-
-        //客户端向服务端发送信息
-        cout<<"enter message: ";
-        char request[MAX_LENGTH];
-        std::cin.getline(request, MAX_LENGTH);
-        size_t request_len = strlen(request);
-        boost::asio::write(sock, boost::asio::buffer(request, request_len));
-
-        // 接收服务端发来的消息。
-        char reply[MAX_LENGTH];
-        size_t reply_len = boost::asio::read(sock, asio::buffer(static_cast<void*>(reply), request_len));
-        std::cout<<"reply is ";
-        std::cout.write(reply, reply_len);
-        cout<<"\n";
-
-    }catch(boost::system::system_error& e){
-
-        std::cerr<<"exception:" <<e.what()<<endl;
-
-    }
-
-    return 0;
+		std::cout << "Enter message: ";
+		char request[MAX_LENGTH];
+		std::cin.getline(request, MAX_LENGTH);
+		size_t request_length = strlen(request);
+		char send_data[MAX_LENGTH] = { 0 };
+		memcpy(send_data, &request_length, 2);
+		memcpy(send_data + 2, request, request_length);
+		boost::asio::write(sock, boost::asio::buffer(send_data, request_length+2));
+		
+		char reply_head[HEAD_LENGTH];
+		size_t reply_length = boost::asio::read(sock,boost::asio::buffer(reply_head, HEAD_LENGTH));
+		short msglen = 0;
+		memcpy(&msglen, reply_head, HEAD_LENGTH);
+		char msg[MAX_LENGTH] = { 0 };
+		size_t  msg_length = boost::asio::read(sock,boost::asio::buffer(msg, msglen));
+		
+		std::cout << "Reply is: ";
+		std::cout.write(msg, msglen) << endl;
+		std::cout << "Reply len is " << msglen;
+		std::cout << "\n";
+	}
+	catch (std::exception& e) {
+		std::cerr << "Exception: " << e.what() << endl;
+	}
+	return 0;
 }
