@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:49:32
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-06 14:36:24
+ * @LastEditTime: 2023-06-06 15:01:18
  * @FilePath: /myLearning/boostasio/AsyncServer/async02/CSession.cpp
  */
 #include "CSession.h"
@@ -41,7 +41,7 @@ void CSession::Send(char* msg, int max_length) {
 		return;
 	}
 	auto& msgnode = _send_que.front();
-	boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, max_length), 
+	boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len), 
 		std::bind(&CSession::HandleWrite, this, std::placeholders::_1, shared_from_this()));
 }
 
@@ -92,7 +92,7 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
 			if(!_b_head_parse){
 				//当前收到的数据 加上本来的数据还没到头部长度，就注册回调函数，继续接收
 				if(bytes_transferred + _recv_head_node->_cur_len < HEAD_LENGTH){
-					memcpy(_recv_head_node->_data, _data, bytes_transferred);
+					memcpy(_recv_head_node->_data + _recv_head_node->_cur_len, _data + copy_len, bytes_transferred);
 					_recv_head_node->_cur_len += bytes_transferred;
 					memset(_data, 0, sizeof _data);
 					_socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH), std::bind(&CSession::HandleRead, this, 
@@ -103,7 +103,7 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
 				//当前收到的数据加上已有的数据比头部多了,填满head再把剩下的向body中填
 				int head_remain = HEAD_LENGTH - _recv_head_node->_cur_len;
 				memcpy(_recv_head_node->_data + _recv_head_node->_cur_len, _data + copy_len, head_remain);
-				copy_len += HEAD_LENGTH;
+				copy_len += head_remain;
 				bytes_transferred -= head_remain;
 
 				//从头部获取这个消息中实际的数据长度
@@ -148,7 +148,7 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
 				_b_head_parse = false;
 				_recv_head_node->Clear();
 				if(bytes_transferred <= 0){
-					memset(_data, 0, sizeof _data);
+					memset(_data, 0, MAX_LENGTH);
 					_socket.async_read_some(boost::asio::buffer(static_cast<void *>(_data), MAX_LENGTH), std::bind(&CSession::HandleRead, this,
 					std::placeholders::_1, std::placeholders::_2, _self_shared));
 					return;
@@ -162,7 +162,6 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
 			//如果当前读到的，小于实际总的，就全填进去，注册读回调，接着读
 			if(bytes_transferred < remain_msg){
 				memcpy(_recv_msg_node->_data + _recv_msg_node->_cur_len, _data + copy_len, bytes_transferred);
-				_recv_msg_node->_cur_len += remain_msg;
 				_recv_msg_node->_cur_len += bytes_transferred;
 				memset(_data, 0, MAX_LENGTH);
 				_socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH), std::bind(&CSession::HandleRead, this, 
@@ -180,7 +179,7 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
 			Send(_recv_msg_node->_data, _recv_msg_node->_total_len);
 			_recv_head_node->Clear();
 			if(bytes_transferred <= 0){
-				memset(_data, 0, sizeof _data);
+				memset(_data, 0, MAX_LENGTH);
 				_socket.async_read_some(boost::asio::buffer(static_cast<void *>(_data), MAX_LENGTH), std::bind(&CSession::HandleRead, this,
 				std::placeholders::_1, std::placeholders::_2, _self_shared));
 				return;
