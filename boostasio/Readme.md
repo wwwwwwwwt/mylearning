@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-30 18:40:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-06 16:05:47
+ * @LastEditTime: 2023-06-07 10:48:13
  * @FilePath: /myLearning/boostasio/Readme.md
 -->
 # 学习boost::asio网络库
@@ -671,3 +671,41 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
 }
 ```
 
+# 网络字节序
+
+1. 网络字节序全部使用大端序，即数据的高位存储在低地址。
+2. 只有整型需要字节序，浮点数或字符类型都不需要，原因是整型是由多个字节组合起来的。浮点数走另一套IEEE规定，字符UTF-8规定
+3. 代码检测机器用的是大端序还是小端序，将十六进制数转换为char地址再取值，就能获得其存储后的低地址字节，即如果得到的字节是1，就是低位存储在低地址，小端序；否则，大端序。
+
+```cpp
+#include <iostream>
+using namespace std;
+bool is_big_endian(){
+    int num = 0x00000001;
+    cout<<hex<<(int)*((char*)&num)<<endl;
+    if(*(char*)&num == 1){
+        return false;
+    }else return true;
+}
+int main(){
+
+    int num = 0x12345678;
+    char* p = (char*)&num;
+    cout<<sizeof(num)<<endl;
+    cout<<"原始数据 "<<hex<<num<<endl;
+    for(int i = 0; i < sizeof(num);i++){
+        cout<<hex<<(int)*(p + i)<<" ";
+    }
+    cout<<endl;
+    if(is_big_endian()){
+        cout<<"大端序"<<endl;
+    }else cout<<"小端序"<<endl;
+
+    return 0;
+}
+4
+原始数据 12345678
+78 56 34 12 
+1
+小端序
+```

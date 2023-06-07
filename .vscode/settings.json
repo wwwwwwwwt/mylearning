@@ -97,6 +97,7 @@
         "sched.h": "c",
         "cassert": "cpp",
         "strstream": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "*.inc": "cpp"
     }
 }

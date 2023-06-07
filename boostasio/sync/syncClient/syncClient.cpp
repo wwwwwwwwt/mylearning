@@ -2,11 +2,12 @@
  * @Author: zzzzztw
  * @Date: 2023-05-31 12:43:19
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-06 14:30:40
+ * @LastEditTime: 2023-06-07 11:10:04
  * @FilePath: /myLearning/boostasio/sync/syncClient/syncClient.cpp
  */
 #include <iostream>
 #include <boost/asio.hpp>
+#include <thread>
 using namespace std;
 using namespace boost::asio::ip;
 const int MAX_LENGTH = 1024*2;
@@ -26,26 +27,40 @@ int main()
 			return 0;
 		}
 
-		std::cout << "Enter message: ";
-		char request[MAX_LENGTH];
-		std::cin.getline(request, MAX_LENGTH);
-		size_t request_length = strlen(request);
-		char send_data[MAX_LENGTH] = { 0 };
-		memcpy(send_data, &request_length, 2);
-		memcpy(send_data + 2, request, request_length);
-		boost::asio::write(sock, boost::asio::buffer(send_data, request_length+2));
-		
-		char reply_head[HEAD_LENGTH];
-		size_t reply_length = boost::asio::read(sock,boost::asio::buffer(reply_head, HEAD_LENGTH));
-		short msglen = 0;
-		memcpy(&msglen, reply_head, HEAD_LENGTH);
-		char msg[MAX_LENGTH] = { 0 };
-		size_t  msg_length = boost::asio::read(sock,boost::asio::buffer(msg, msglen));
-		
-		std::cout << "Reply is: ";
-		std::cout.write(msg, msglen) << endl;
-		std::cout << "Reply len is " << msglen;
-		std::cout << "\n";
+		thread send_thread([&sock] {
+			for (;;) {
+				this_thread::sleep_for(std::chrono::milliseconds(2));
+				const char* request = "hello world!";
+				size_t request_length = strlen(request);
+				char send_data[MAX_LENGTH] = { 0 };
+				short length = boost::asio::detail::socket_ops::host_to_network_short(request_length);
+				memcpy(send_data, &length, 2);
+				memcpy(send_data + 2, request, request_length);
+				boost::asio::write(sock, boost::asio::buffer(send_data, request_length + 2));
+			}
+			});
+
+		thread recv_thread([&sock] {
+			for (;;) {
+				this_thread::sleep_for(std::chrono::milliseconds(2));
+				cout << "begin to receive..." << endl;
+				char reply_head[HEAD_LENGTH];
+				size_t reply_length = boost::asio::read(sock, boost::asio::buffer(reply_head, HEAD_LENGTH));
+				short msglen = 0;
+				memcpy(&msglen, reply_head, HEAD_LENGTH);
+				msglen = boost::asio::detail::socket_ops::network_to_host_short(msglen);
+				char msg[MAX_LENGTH] = { 0 };
+				size_t  msg_length = boost::asio::read(sock, boost::asio::buffer(msg, msglen));
+
+				std::cout << "Reply is: ";
+				std::cout.write(msg, msglen) << endl;
+				std::cout << "Reply len is " << msglen;
+				std::cout << "\n";
+			}
+			});
+
+		send_thread.join();
+		recv_thread.join();
 	}
 	catch (std::exception& e) {
 		std::cerr << "Exception: " << e.what() << endl;

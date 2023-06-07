@@ -2,11 +2,12 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:49:32
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-07 11:03:42
- * @FilePath: /myLearning/boostasio/AsyncServer/async02/CSession.cpp
+ * @LastEditTime: 2023-06-07 12:49:50
+ * @FilePath: /myLearning/boostasio/AsyncServer/async03/server/CSession.cpp
  */
 #include "CSession.h"
 #include "CServer.h"
+#include "msg.pb.h"
 #include <iostream>
 CSession::CSession(boost::asio::io_context& io_context, CServer* server):
 	_socket(io_context), _server(server){
@@ -43,6 +44,19 @@ void CSession::Send(char* msg, int max_length) {
 	auto& msgnode = _send_que.front();
 	boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len), 
 		std::bind(&CSession::HandleWrite, this, std::placeholders::_1, shared_from_this()));
+}
+
+void CSession::Send(std::string msg) {
+	std::lock_guard<std::mutex> lock(_send_lock);
+	int send_que_size = _send_que.size();
+
+	_send_que.push(make_shared<MsgNode>(msg.c_str(), msg.length()));
+	if (send_que_size > 0) {
+		return;
+	}
+	auto& msgnode = _send_que.front();
+	boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len),
+		std::bind(&CSession::HandleWrite, this, std::placeholders::_1, SharedSelf()));
 }
 
 void CSession::Close(){
@@ -143,11 +157,19 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
 				copy_len += data_len;
 				bytes_transferred -= data_len;
 				_recv_msg_node->_data[_recv_msg_node->_total_len] = '\0';
-				cout<<"receive data is "<<_recv_msg_node->_data<<endl;
-
+				//cout<<"receive data is "<<_recv_msg_node->_data<<endl;
+				MsgData msgdata;
+				std::string receive_data;
+				msgdata.ParseFromString(std::string(_recv_msg_node->_data, _recv_msg_node->_total_len));
+				std::cout << "recevie msg id  is " << msgdata.id() << " msg data is " << msgdata.data() << endl;
+				std::string return_str = "server has received msg, msg data is " + msgdata.data();
+				MsgData msgreturn;
+				msgreturn.set_id(msgdata.id());
+				msgreturn.set_data(return_str);
+				msgreturn.SerializeToString(&return_str);
 				// 拿到数据包后的逻辑处理，此处暂时发送回客户端
-				Send(_recv_msg_node->_data, _recv_msg_node->_total_len);
-				
+			//	Send(_recv_msg_node->_data, _recv_msg_node->_total_len);
+				Send(return_str);
 				// 继续轮询剩余的未处理数据
 				_b_head_parse = false;
 				_recv_head_node->Clear();
@@ -177,10 +199,20 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
 			bytes_transferred -= remain_msg;
 			copy_len += remain_msg;
 			_recv_msg_node->_data[_recv_msg_node->_total_len] = '\0';
-			cout<<"receive data is "<<_recv_msg_node->_data<<endl;
+			//cout<<"receive data is "<<_recv_msg_node->_data<<endl;
 
+			MsgData msgdata;
+			std::string receive_data;
+			msgdata.ParseFromString(std::string(_recv_msg_node->_data, _recv_msg_node->_total_len));
+			std::cout << "recevie msg id  is " << msgdata.id() << " msg data is " << msgdata.data() << endl;
+			std::string return_str = "server has received msg, msg data is " + msgdata.data();
+			MsgData msgreturn;
+			msgreturn.set_id(msgdata.id());
+			msgreturn.set_data(return_str);
+			msgreturn.SerializeToString(&return_str);
+			Send(return_str);
 			// 否则，读到这个包所有数据，拿到数据包后的逻辑处理，此处暂时发送回客户端
-			Send(_recv_msg_node->_data, _recv_msg_node->_total_len);
+			//Send(_recv_msg_node->_data, _recv_msg_node->_total_len);
 			_recv_head_node->Clear();
 			if(bytes_transferred <= 0){
 				memset(_data, 0, MAX_LENGTH);

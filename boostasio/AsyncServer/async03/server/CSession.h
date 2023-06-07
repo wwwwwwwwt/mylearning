@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:49:25
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-07 12:31:06
- * @FilePath: /myLearning/boostasio/AsyncServer/async02/CSession.h
+ * @LastEditTime: 2023-06-07 12:53:29
+ * @FilePath: /myLearning/boostasio/AsyncServer/async03/server/CSession.h
  */
 #pragma once
 #include <boost/asio.hpp>
@@ -23,9 +23,10 @@ class MsgNode
 {
 	friend class CSession;
 public:
-	MsgNode(char * msg, short max_len) : _total_len(max_len + HEAD_LENGTH), _cur_len(0){
+	MsgNode(const char * msg, short max_len) : _total_len(max_len + HEAD_LENGTH), _cur_len(0){
 		_data = new char[_total_len + 1];
-		int max_len_host = boost::asio::detail::socket_ops::host_to_network_long(max_len);
+		//尽量使用long 避免精度丢失
+		unsigned short max_len_host = boost::asio::detail::socket_ops::host_to_network_short(max_len); 
 		memcpy(_data, &max_len_host, HEAD_LENGTH); // 把包的实际长度转换为网络字节序，并拷贝到头部
 		memcpy(_data + HEAD_LENGTH, msg, max_len);
 		_data[_total_len] = '\0';
@@ -59,6 +60,7 @@ public:
 	std::string& GetUuid();
 	void Start();
 	void Send(char* msg,  int max_length);
+	void Send(std::string msg);
 	void Close();
 	std::shared_ptr<CSession>SharedSelf(){
 		return shared_from_this();
