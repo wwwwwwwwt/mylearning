@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:49:25
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-07 12:53:29
+ * @LastEditTime: 2023-06-07 19:36:04
  * @FilePath: /myLearning/boostasio/AsyncServer/async03/server/CSession.h
  */
 #pragma once
@@ -13,6 +13,8 @@
 #include <mutex>
 #include <memory>
 #include <iostream>
+#include <jsoncpp/json/json.h>
+#include <jsoncpp/json/value.h>
 using namespace std;
 #define MAX_LENGTH  1024 * 2
 #define HEAD_LENGTH 2

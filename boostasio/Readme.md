@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-30 18:40:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-07 10:48:13
+ * @LastEditTime: 2023-06-07 19:49:33
  * @FilePath: /myLearning/boostasio/Readme.md
 -->
 # 学习boost::asio网络库
@@ -709,3 +709,49 @@ int main(){
 1
 小端序
 ```
+
+# 简单使用protobuf(async03)
+
+* 编写proto文件
+```shell
+syntax="proto3";
+
+message MsgData{
+    int32 id = 1;
+    string data = 2;
+}
+```
+* 编译出cpp格式的pb文件
+```shell
+protoc --cpp_out=. ./msg.proto
+—cpp_out= 表示指定要生成的pb文件所在的位置
+./msg.proto 表示msg.proto所在的位置，因为我们是在msg.proto所在文件夹中执行的protoc命令,所以是当前路径即可。
+```
+
+* 修改发送逻辑（服务端收到后，进行解析，再序列化发给客户端）
+
+```cpp
+    MsgData msgdata;
+    std::string receive_data;
+    msgdata.ParseFromString(std::string(_recv_msg_node->_data, _recv_msg_node->_total_len));
+    std::cout << "recevie msg id  is " << msgdata.id() << " msg data is " << msgdata.data() << endl;
+    std::string return_str = "server has received msg, msg data is " + msgdata.data();
+    MsgData msgreturn;
+    msgreturn.set_id(msgdata.id());
+    msgreturn.set_data(return_str);
+    msgreturn.SerializeToString(&return_str);
+    Send(return_str);
+```
+
+* 客户端发送消息逻辑（先创造pb的msg节点，向里面填充数据，再序列化）
+
+```cpp
+  MsgData msgdata;
+  msgdata.set_id(1001);
+  msgdata.set_data("hello world");
+  std::string request;
+  msgdata.SerializeToString(&request);
+```
+* 编译时，后面加上-lprotobuf
+
+# 简单使用json进行消息传递
