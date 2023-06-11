@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-30 18:40:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-07 19:49:33
+ * @LastEditTime: 2023-06-08 18:18:00
  * @FilePath: /myLearning/boostasio/Readme.md
 -->
 # 学习boost::asio网络库
@@ -754,4 +754,36 @@ protoc --cpp_out=. ./msg.proto
 ```
 * 编译时，后面加上-lprotobuf
 
-# 简单使用json进行消息传递
+# 简单使用json进行消息传递(async04)
+
+* demo
+```cpp
+#include <iostream>
+#include <jsoncpp/json/json.h>
+#include <jsoncpp/json/value.h>
+#include <jsoncpp/json/reader.h>
+
+int main(){
+    Json::Value root;
+    root["id"] = 1001;
+    root["data"] = "hello world";
+    std::string request = root.toStyledString();
+    std::cout<<"request is "<<request<<std::endl;
+
+    Json::Value root2;
+    Json::Reader reader;
+    reader.parse(request, root2);
+    std::cout<<"msg id is "<<root2["id"] <<" msg is "<<root2["data"]<<std::endl;
+    return 0;
+}
+
+```
+
+```cpp
+  Json::Reader reader;
+  Json::Value root;
+  reader.parse(std::string(_recv_msg_node->_data, _recv_msg_node->_total_len), root);
+  std::cout << "recevie msg id  is " << root["id"].asInt() << " msg data is " << root["data"].asString() << endl;
+  root["data"] = "server has received msg, msg data is " + root["data"].asString();
+  std::string return_str = root.toStyledString();
+```
