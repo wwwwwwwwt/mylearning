@@ -10,8 +10,10 @@ using namespace std;
 class SingleInstance{
 public:
     static SingleInstance* GetInstance(){
-        static SingleInstance ins(5);
-        return &ins;
+        if(ins == nullptr){
+            ins = new SingleInstance(5);
+        }
+        return ins;
     }
     ~SingleInstance(){}
     int Getcnt()const{
@@ -28,10 +30,12 @@ private:
     SingleInstance(SingleInstance&&) = default;
     SingleInstance(const SingleInstance&) = default;
     SingleInstance& operator=(const SingleInstance& other){return *this;}
-
+    static SingleInstance *ins;
     int count;
 
 };
+
+SingleInstance* SingleInstance::ins = SingleInstance::GetInstance();
 
 int main(){
     SingleInstance* ins = SingleInstance::GetInstance();
@@ -46,7 +50,8 @@ int main(){
 
     return 0;
 }
-
+*/
+/*
 输出:
 饿汉
 5
@@ -104,6 +109,8 @@ void work(){
     //此处为了演示没有delete ins 实际生产环境需要delete防止内存泄漏
 }
 */
+
+
 
 class SingleInstance{
 public:
