@@ -2,12 +2,13 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:49:32
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-08 20:31:33
+ * @LastEditTime: 2023-06-12 15:42:04
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/CSession.cpp
  */
 #include "CSession.h"
 #include "CServer.h"
 #include "msgnode.h"
+#include "LogicSystem.h"
 #include <iostream>
 
 CSession::CSession(boost::asio::io_context& io_context, CServer* server):
@@ -150,14 +151,15 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
                     _recv_msg_node->_data[_recv_msg_node->_total_len] = '\0';
                     //cout << "receive data is " << _recv_msg_node->_data << endl;
                     //此处可以调用Send发送测试
-                    Json::Reader reader;
-                    Json::Value root;
-                    reader.parse(std::string(_recv_msg_node->_data, _recv_msg_node->_total_len), root);
-                    std::cout << "recevie msg id  is " << root["id"].asInt() << " msg data is "
-                        << root["data"].asString() << endl;
-                    root["data"] = "server has received msg, msg data is " + root["data"].asString();
-                    std::string return_str = root.toStyledString();
-                    Send(return_str, root["id"].asInt());
+                    // Json::Reader reader;
+                    // Json::Value root;
+                    // reader.parse(std::string(_recv_msg_node->_data, _recv_msg_node->_total_len), root);
+                    // std::cout << "recevie msg id  is " << root["id"].asInt() << " msg data is "
+                    //     << root["data"].asString() << endl;
+                    // root["data"] = "server has received msg, msg data is " + root["data"].asString();
+                    // std::string return_str = root.toStyledString();
+                    // Send(return_str, root["id"].asInt());
+                    LogicSystem::GetInstance()->PostMsgToQue(make_shared<LogicNode>(shared_from_this(), _recv_msg_node));
                     //继续轮询剩余未处理数据
                     _b_head_parse = false;
                     _recv_head_node->Clear();
@@ -187,14 +189,15 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
                 _recv_msg_node->_data[_recv_msg_node->_total_len] = '\0';
                 //cout << "receive data is " << _recv_msg_node->_data << endl;
                     //此处可以调用Send发送测试
-                Json::Reader reader;
-                Json::Value root;
-                reader.parse(std::string(_recv_msg_node->_data, _recv_msg_node->_total_len), root);
-                std::cout << "recevie msg id  is " << root["id"].asInt() << " msg data is "
-                    << root["data"].asString() << endl;
-                root["data"] = "server has received msg, msg data is " + root["data"].asString();
-                std::string return_str = root.toStyledString();
-                Send(return_str, root["id"].asInt());
+                // Json::Reader reader;
+                // Json::Value root;
+                // reader.parse(std::string(_recv_msg_node->_data, _recv_msg_node->_total_len), root);
+                // std::cout << "recevie msg id  is " << root["id"].asInt() << " msg data is "
+                //     << root["data"].asString() << endl;
+                // root["data"] = "server has received msg, msg data is " + root["data"].asString();
+                // std::string return_str = root.toStyledString();
+                // Send(return_str, root["id"].asInt());
+                 LogicSystem::GetInstance()->PostMsgToQue(make_shared<LogicNode>(shared_from_this(), _recv_msg_node));
                 //继续轮询剩余未处理数据
                 _b_head_parse = false;
                 _recv_head_node->Clear();
@@ -216,4 +219,8 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
     catch (std::exception& e) {
         std::cout << "Exception code is " << e.what() << endl;
     }
+}
+
+LogicNode::LogicNode(shared_ptr<CSession>session, shared_ptr<RecvNode>recv):_session(session), _recvnode(recv){
+    
 }

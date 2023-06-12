@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-08 19:00:55
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-08 20:30:42
+ * @LastEditTime: 2023-06-12 15:11:55
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/msgnode.h
  */
 #pragma once
@@ -11,7 +11,7 @@
 #include <iostream>
 #include "const.h"
 using boost::asio::ip::tcp;
-
+class LogicSystem;
 class MsgNode
 {
 public:
@@ -32,6 +32,7 @@ public:
     char* _data;
 };
 class RecvNode :public MsgNode {
+friend class LogicSystem;
 public:
     RecvNode(short max_len, short msg_id);
 private:
@@ -43,3 +44,4 @@ public:
 private:
     short _msg_id;
 };
+

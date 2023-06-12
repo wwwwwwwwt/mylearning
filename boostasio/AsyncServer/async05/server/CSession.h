@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:49:25
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-08 20:32:59
+ * @LastEditTime: 2023-06-12 15:36:14
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/CSession.h
  */
 #pragma once
@@ -20,7 +20,7 @@
 using namespace std;
 using boost::asio::ip::tcp;
 class CServer;
-
+class LogicSystem;
 class CSession:public std::enable_shared_from_this<CSession>
 {
 public:
@@ -53,4 +53,14 @@ private:
 	std::shared_ptr<RecvNode>_recv_msg_node;
 	bool _b_head_parse;
 	std::shared_ptr<MsgNode>_recv_head_node;
+};
+
+class LogicNode{
+	friend class LogicSystem;
+public:
+	LogicNode(shared_ptr<CSession>, shared_ptr<RecvNode>);
+
+private:
+	shared_ptr<CSession>_session;
+	shared_ptr<RecvNode>_recvnode;
 };
