@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-12 14:24:05
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-12 15:56:18
+ * @LastEditTime: 2023-06-12 16:56:38
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/LogicSystem.cpp
  */
 #include "LogicSystem.h"
@@ -30,6 +30,7 @@ void LogicSystem::HelloWorldCallBack(shared_ptr<CSession>session, const short& m
     
 }
 
+//工作线程的工作逻辑，消费者逻辑
 void LogicSystem::DealMsg(){
     for(;;){
         std::unique_lock<mutex>locker(mtx);
@@ -59,7 +60,6 @@ void LogicSystem::DealMsg(){
             break;
         }
         // 如果没关闭，队列有数据
-
         auto it = _msg_que.front();   
         cout<<"msg id is "<<it->_recvnode->_msg_id<<endl;
         auto callback_it = _func_callback.find(it->_recvnode->_msg_id);
@@ -73,6 +73,7 @@ void LogicSystem::DealMsg(){
     }
 }
 
+// push 生产者逻辑
 void LogicSystem::PostMsgToQue(shared_ptr<LogicNode> msg){
    std::unique_lock<mutex>locker(mtx);
     _msg_que.push(msg);

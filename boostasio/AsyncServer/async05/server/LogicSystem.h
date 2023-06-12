@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-12 13:32:49
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-12 15:11:38
+ * @LastEditTime: 2023-06-12 17:02:31
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/LogicSystem.h
  */
 #pragma once
@@ -29,11 +29,12 @@ public:
 
 private:
     LogicSystem();
-    std::queue<shared_ptr<LogicNode>>_msg_que;
-    std::mutex mtx;
     void DealMsg();
-    std::condition_variable _cv;
+    std::queue<shared_ptr<LogicNode>>_msg_que;
     bool is_stop;
+    std::mutex mtx;
+    std::condition_variable _cv;
+    //注册的回调函数
     std::map<short, FuncCallBack>_func_callback;
     std::thread _worker_thread;
 };

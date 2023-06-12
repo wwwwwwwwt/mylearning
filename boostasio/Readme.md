@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-30 18:40:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-08 18:18:00
+ * @LastEditTime: 2023-06-12 18:48:05
  * @FilePath: /myLearning/boostasio/Readme.md
 -->
 # 学习boost::asio网络库
@@ -787,3 +787,26 @@ int main(){
   root["data"] = "server has received msg, msg data is " + root["data"].asString();
   std::string return_str = root.toStyledString();
 ```
+
+# 使用单例模式构建单逻辑线程 + 逻辑队列处理回调函数
+
+* 增添single.h LogicSystem.h LogicSystem.cpp 文件
+
+
+## 目前逻辑整理：
+
+1. 网络层Server：
+   1.  server端使用asio网络层，接收新进来的链接，io_context.run()死循环轮询，这个事件循环会在需要处理的异步操作完成时自动触发相关的回调函数，以及在没有待处理事件时休眠以节省系统资源。
+   2.  使用一个新的CSession会话类对象来从acceptor中拿到这个会话的socket，然后start，之后由这个对象对这个链接进行服务
+
+2. 会话层CSession：
+   1. Csession进行start，异步的读取客户端发来的消息
+   2. 进入handleread逻辑，按我们定义的消息id + 消息长度 + 消息内容的格式读取内容，防止粘包，并按json反序列化回来，处理网络字节序到本地字节序的转化。之后进入处理逻辑 + 组装回复的消息（可选）。
+   3. 如果读好了，调用Send异步发送我们的消息（这里关联着逻辑队列）
+
+3. 逻辑层：LogicSystem
+   1. 继承于懒汉单例模式，使之只有一个逻辑线程来处理，避免共享资源访问频繁加锁导致的性能下降，如redis也采用这种思路。特别注意：由于基类继承于单例，所以自身也需要将构造函数私有化，但是单例类的构造出逻辑线程对象的智能指针GetInstance函数中调用了new T，T就是逻辑类本身，所以派生的逻辑类需要将单例类变为自己的友元类，这样单例类的才可以访问其派生类私有的构造函数
+   2. 逻辑层的消息封装Logicnode 和 RecvNode 将LogicSystem设为自己友元类，这样LogicSystem可以使用其私有函数
+   3. 逻辑层初始化调用注册函数，将我们设置的回调函数注册到哈希表，根据接收到的消息id从哈希表中取到对应的回调函数并调用。
+   4. 使用单线程work_thread作为消费者，死循环执行DealMsg，从消息队列中取出消息，解析消息id并执行回调
+   5. 会话层使用单例逻辑调用PostToque，作为生产者，将会话层解析后的消息id，消息内容打包放进消息队列。
