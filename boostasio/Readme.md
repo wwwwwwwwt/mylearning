@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-30 18:40:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-12 18:48:05
+ * @LastEditTime: 2023-06-14 18:06:13
  * @FilePath: /myLearning/boostasio/Readme.md
 -->
 # 学习boost::asio网络库
@@ -788,7 +788,7 @@ int main(){
   std::string return_str = root.toStyledString();
 ```
 
-# 使用单例模式构建单逻辑线程 + 逻辑队列处理回调函数
+# 使用单例模式构建单逻辑线程 + 逻辑队列处理回调函数 (async05)
 
 * 增添single.h LogicSystem.h LogicSystem.cpp 文件
 
@@ -810,3 +810,72 @@ int main(){
    3. 逻辑层初始化调用注册函数，将我们设置的回调函数注册到哈希表，根据接收到的消息id从哈希表中取到对应的回调函数并调用。
    4. 使用单线程work_thread作为消费者，死循环执行DealMsg，从消息队列中取出消息，解析消息id并执行回调
    5. 会话层使用单例逻辑调用PostToque，作为生产者，将会话层解析后的消息id，消息内容打包放进消息队列。
+
+## 优雅推出的两种方式：
+
+1. 利用asio库提供的signal_set
+* 利用signal_set 将信号SIGINT SIGTERM注册进io_context中，然后异步等待捕捉信号，捕捉到信号后就调用io_context.stop()，之后将执行析构所有对象的逻辑。
+```cpp
+#include <iostream>
+#include "CSession.h"
+#include "CServer.h"
+#include <boost/asio.hpp>
+#include <exception>
+#include <signal.h>
+using namespace std;
+int main(){
+
+    try{
+        boost::asio::io_context ioc;
+        boost::asio::signal_set signals(ioc, SIGINT, SIGTERM);
+        signals.async_wait([&ioc](int , int){
+            ioc.stop();
+        });
+        CServer s(ioc, 10086);
+        // io_context io.run(), 开始轮询
+        //启动异步事件循环。这个事件循环会在需要处理的异步操作完成时自动触发相关的回调函数，以及在没有待处理事件时休眠以节省系统资源。
+        ioc.run();
+
+    }catch(std::exception& e){
+        std::cout<<"err ! err is "<<e.what()<<std::endl;
+    }
+
+}
+
+```
+
+2. c风格两个线程，一个主线程执行ioc.run, 一个子线程捕捉信号, 捕捉到后就通过信号量主线程
+
+```cpp
+std::condition_variable cv_;
+std::mutex mtx_;
+volatile bool stop_ = false;
+void signal_handler(int sig){
+    if(sig == SIGINT || sig == SIGTERM){
+        unique_lock<mutex>lokcer(mtx_);
+        stop_ = true;
+        cv_.notify_all();
+    }
+}
+
+int main(){
+    try{
+        boost::asio::io_context ioc;
+        std::thread t([&](){
+            CServer s(ioc, 10086);
+            ioc.run();
+        });
+        signal(SIGINT,signal_handler);
+        signal(SIGTERM, signal_handler);
+        unique_lock<mutex>locker(mtx_);
+        cv_.wait(locker, [&]{
+            return stop_ == true;
+        });
+        ioc.stop();
+        t.join();
+
+    }catch(std::exception& e){
+        std::cout<<"err! err is "<<e.what()<<std::endl;
+    }
+}
+```
