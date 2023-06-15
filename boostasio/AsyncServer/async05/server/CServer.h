@@ -2,11 +2,12 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:48:57
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-05 19:51:14
- * @FilePath: /myLearning/boostasio/AsyncServer/async/CServer.h
+ * @LastEditTime: 2023-06-15 16:12:03
+ * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/CServer.h
  */
 #pragma once
 #include <boost/asio.hpp>
+#include "AsioIOServivePool.h"
 #include "CSession.h"
 #include <memory.h>
 #include <map>

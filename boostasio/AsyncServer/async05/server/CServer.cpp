@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:48:45
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-06 14:38:16
- * @FilePath: /myLearning/boostasio/AsyncServer/async02/CServer.cpp
+ * @LastEditTime: 2023-06-15 15:47:30
+ * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/CServer.cpp
  */
 #include "CServer.h"
 #include <iostream>
@@ -27,7 +27,11 @@ void CServer::HandleAccept(shared_ptr<CSession> new_session, const boost::system
 }
 
 void CServer::StartAccept() {
-	shared_ptr<CSession> new_session = make_shared<CSession>(_io_context, this);
+
+	// 增加io_context池逻辑
+	auto& io_context = AsioIOServivePool::GetInstance()->GetIOServive();
+
+	shared_ptr<CSession> new_session = make_shared<CSession>(io_context, this);
 	_acceptor.async_accept(new_session->GetSocket(), std::bind(&CServer::HandleAccept, this, new_session, placeholders::_1));
 }
 

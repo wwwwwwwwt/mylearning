@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-08 19:00:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-14 18:05:53
+ * @LastEditTime: 2023-06-15 15:53:32
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/AsyncServer.cpp
  */
 #include <iostream>
@@ -13,14 +13,17 @@
 #include <signal.h>
 #include <thread>
 #include <condition_variable>
+#include "AsioIOServivePool.h"
 using namespace std;
 int main(){
 
     try{
+        auto pool = AsioIOServivePool::GetInstance();
         boost::asio::io_context ioc;
         boost::asio::signal_set signals(ioc, SIGINT, SIGTERM);
-        signals.async_wait([&ioc](auto , auto){
+        signals.async_wait([&](auto , auto){
             ioc.stop();
+            pool->Stop();
         });
         CServer s(ioc, 10086);
        // io_context io.run(), 开始轮询
