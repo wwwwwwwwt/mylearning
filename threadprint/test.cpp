@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-02-25 16:48:22
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-04-11 15:44:32
- * @FilePath: /cpptest/threadprint/test.cpp
+ * @LastEditTime: 2023-06-14 16:09:09
+ * @FilePath: /myLearning/threadprint/test.cpp
  */
 #include <iostream>
 #include <mutex>
@@ -48,7 +48,7 @@ public:
             printf("A\n");
             state(flag);
             cv_.notify_all();
-        }
+       }
     }
     void printb(){
         unique_lock<mutex>locker(mtx_);
