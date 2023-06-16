@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-08 19:00:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-16 15:15:52
+ * @LastEditTime: 2023-06-16 15:50:37
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/AsyncServer.cpp
  */
 #include <iostream>
@@ -26,8 +26,9 @@ int main(){
         auto pool = AsioIOServivePool::GetInstance();
       // auto pool = AsioThreadPool::GetInstance();
         boost::asio::io_context ioc;
+
         boost::asio::signal_set signals(ioc, SIGINT, SIGTERM);
-        signals.async_wait([&](auto , auto){
+        signals.async_wait([&](const boost::system::error_code, int){
             ioc.stop();
             pool->Stop();
         
