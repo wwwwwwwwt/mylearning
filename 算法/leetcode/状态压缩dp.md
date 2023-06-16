@@ -2,13 +2,14 @@
  * @Author: zzzzztw
  * @Date: 2023-04-08 09:42:35
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-14 10:02:13
+ * @LastEditTime: 2023-06-16 10:30:46
  * @FilePath: /myLearning/算法/leetcode/状态压缩dp.md
 -->
 # 状态压缩dp
 
 
 * 技巧
+* https://leetcode.cn/circle/discuss/CaOJ45/
 ```cpp
 1. 统计这个状态中有多少个1， 一般用于预处理所有状态
 for(int i = 1; i < totalst; i++){
