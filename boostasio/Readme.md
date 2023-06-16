@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-05-30 18:40:16
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-14 18:06:13
+ * @LastEditTime: 2023-06-16 15:30:16
  * @FilePath: /myLearning/boostasio/Readme.md
 -->
 # 学习boost::asio网络库
@@ -879,3 +879,10 @@ int main(){
     }
 }
 ```
+
+# 多线程的两种实现
+
+## 多个io_context跑在不同线程，每个线程执行一个io_context，采用轮询的方法将连接acceptor到不同的io_context。(AssioServivePool)
+* 这种方式一般取核数为线程，每个线程跑一个，这样一个session的回调函数只会在一个ioc中执行，ioc又是串行的放在逻辑队列中执行，所以不会有线程安全问题。
+## 一个io_context跑在多个线程中，每个线程在拿走一个就绪事件进行处理，然后放入逻辑队列进行执行
+* 这样一个session的回调函数可能放在多个ioc中执行，前后关系可能错乱，所以需要按照asio提供的strand(底层是一个安全队列)将就绪事件串联执行。

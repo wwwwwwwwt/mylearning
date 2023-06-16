@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:49:25
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-12 15:36:14
+ * @LastEditTime: 2023-06-16 13:44:07
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/CSession.h
  */
 #pragma once
@@ -47,7 +47,7 @@ private:
 	CServer* _server;
 	std::queue<shared_ptr<SendNode> > _send_que;
 	std::mutex _send_lock;
-
+	boost::asio::strand<boost::asio::io_context::executor_type>_strand;
 	// 处理粘包逻辑，保存头部和消息体，还有flag表示头部解析是否完成
 
 	std::shared_ptr<RecvNode>_recv_msg_node;

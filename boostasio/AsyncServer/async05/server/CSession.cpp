@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:49:32
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-12 15:42:04
+ * @LastEditTime: 2023-06-16 15:03:03
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/CSession.cpp
  */
 #include "CSession.h"
@@ -12,7 +12,7 @@
 #include <iostream>
 
 CSession::CSession(boost::asio::io_context& io_context, CServer* server):
-    _socket(io_context), _server(server), _b_close(false),_b_head_parse(false){
+    _socket(io_context),_b_close(false), _server(server),_strand(io_context.get_executor()),_b_head_parse(false){
     boost::uuids::uuid  a_uuid = boost::uuids::random_generator()();
     _uuid = boost::uuids::to_string(a_uuid);
     _recv_head_node = make_shared<MsgNode>(HEAD_TOTAL_LEN);
@@ -28,8 +28,10 @@ std::string& CSession::GetUuid() {
 
 void CSession::Start(){
 	memset(_data, 0, MAX_LENGTH);
-	_socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH), std::bind(&CSession::HandleRead, this, 
-		std::placeholders::_1, std::placeholders::_2, shared_from_this()));
+	_socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH), 
+    boost::asio::bind_executor(_strand,  std::bind(&CSession::HandleRead, this, 
+		std::placeholders::_1, std::placeholders::_2, SharedSelf()))
+   );
 }
 
 void CSession::Send(char* msg, short max_length, short msgid) {
@@ -45,7 +47,9 @@ void CSession::Send(char* msg, short max_length, short msgid) {
     }
     auto& msgnode = _send_que.front();
     boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len), 
-        std::bind(&CSession::HandleWrite, this, std::placeholders::_1, SharedSelf()));
+        boost::asio::bind_executor(_strand, 
+        std::bind(&CSession::HandleWrite, this, std::placeholders::_1, SharedSelf())
+        ));
 }
 
 void CSession::Send(std::string msg, short msgid) {
@@ -60,8 +64,10 @@ void CSession::Send(std::string msg, short msgid) {
         return;
     }
     auto& msgnode = _send_que.front();
-    boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len),
-        std::bind(&CSession::HandleWrite, this, std::placeholders::_1, SharedSelf()));
+    boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len), 
+        boost::asio::bind_executor(_strand, 
+        std::bind(&CSession::HandleWrite, this, std::placeholders::_1, SharedSelf())
+        ));
 }
 
 void CSession::Close(){
@@ -75,8 +81,10 @@ void CSession::HandleWrite(const boost::system::error_code& error, shared_ptr<CS
 		_send_que.pop();
 		if (!_send_que.empty()) {
 			auto &msgnode = _send_que.front();
-			boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len),
-				std::bind(&CSession::HandleWrite, this, std::placeholders::_1, _self_shared));
+            boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len), 
+                boost::asio::bind_executor(_strand, 
+                std::bind(&CSession::HandleWrite, this, std::placeholders::_1, SharedSelf())
+                ));
 		}
 	}
 	else {
@@ -99,7 +107,9 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
                         _recv_head_node->_cur_len += bytes_transferred;
                         ::memset(_data, 0, MAX_LENGTH);
                         _socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH),
-                            std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self));
+                            boost::asio::bind_executor(_strand, 
+                            std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self))
+                            );
                         return;
                     }
                     //收到的数据比头部多
@@ -139,8 +149,9 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
                         _recv_msg_node->_cur_len += bytes_transferred;
                         ::memset(_data, 0, MAX_LENGTH);
                         _socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH),
-                            std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self));
-                        //头部处理完成
+                            boost::asio::bind_executor(_strand, 
+                            std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self))
+                            );
                         _b_head_parse = true;
                         return;
                     }
@@ -166,7 +177,9 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
                     if (bytes_transferred <= 0) {
                         ::memset(_data, 0, MAX_LENGTH);
                         _socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH),
-                            std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self));
+                            boost::asio::bind_executor(_strand, 
+                            std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self))
+                            );
                         return;
                     }
                     continue;
@@ -179,7 +192,9 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
                     _recv_msg_node->_cur_len += bytes_transferred;
                     ::memset(_data, 0, MAX_LENGTH);
                     _socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH),
-                        std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self));
+                        boost::asio::bind_executor(_strand, 
+                        std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self))
+                        );
                     return;
                 }
                 memcpy(_recv_msg_node->_data + _recv_msg_node->_cur_len, _data + copy_len, remain_msg);
@@ -204,7 +219,9 @@ void CSession::HandleRead(const boost::system::error_code& error, size_t  bytes_
                 if (bytes_transferred <= 0) {
                     ::memset(_data, 0, MAX_LENGTH);
                     _socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH),
-                        std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self));
+                        boost::asio::bind_executor(_strand, 
+                        std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_self))
+                        );
                     return;
                 }
                 continue;

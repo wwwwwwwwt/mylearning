@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-05 19:48:57
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-15 16:12:03
+ * @LastEditTime: 2023-06-16 14:59:44
  * @FilePath: /myLearning/boostasio/AsyncServer/async05/server/CServer.h
  */
 #pragma once
@@ -17,6 +17,7 @@ class CServer
 {
 public:
 	CServer(boost::asio::io_context& io_context, short port);
+	~CServer();
 	void ClearSession(std::string);
 private:
 	void HandleAccept(shared_ptr<CSession>, const boost::system::error_code & error);
@@ -25,4 +26,6 @@ private:
 	short _port;
 	tcp::acceptor _acceptor;
 	std::map<std::string, shared_ptr<CSession>> _sessions;
+	std::mutex _mutex;
+	boost::asio::executor_work_guard<boost::asio::io_context::executor_type> work_guard_;
 };
