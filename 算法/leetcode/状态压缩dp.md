@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-04-08 09:42:35
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-16 10:30:46
+ * @LastEditTime: 2023-06-18 17:20:24
  * @FilePath: /myLearning/算法/leetcode/状态压缩dp.md
 -->
 # 状态压缩dp
@@ -121,5 +121,79 @@ public:
         return f[st - 1];
     }
 }
+
+```
+
+
+3. 特别的排列
+
+```cpp
+class Solution {
+public:
+    static const int N = 15;
+    using ll = long long;
+    ll f[1<<N][20];
+    static const int MOD = 1e9 + 7;
+    int specialPerm(vector<int>& nums) {
+        for(int i = 0; i < nums.size(); i++){
+            f[1<<i][i] = 1;
+        }
+        int n = nums.size();
+        for(int i = 0; i < 1 << n; i++){
+            for(int j = 0; j < n; j++){
+                if(i & (1 << j))continue;
+                for(int k = 0; k < n; k++){
+                    if((i & (1 << k)) && (nums[k] % nums[j] == 0 || nums[j] % nums[k] == 0)){
+                        f[i|(1<<j)][j] += f[i][k];
+                    }
+                }
+            }
+        }
+        ll res = 0;
+        for(int i = 0; i < n;i++){
+            res += f[(1<<n)-1][i];
+        }
+        return res % MOD;
+    }
+};
+
+```
+4. 996 正方形数组的数目
+```cpp
+class Solution {
+public:
+    static const int N = 15;
+    int f[1<<N][15];
+    using ll = long long;
+    int numSquarefulPerms(vector<int>& nums) {
+        for(int i = 0; i < nums.size(); i++){
+            f[1<<i][i] = 1;
+        }
+        int n = nums.size();
+        sort(nums.begin(), nums.end());
+        for(int i = 0; i < 1 << n; i++){
+            for(int j = 0; j < nums.size(); j++){
+                if(i & 1 << j)continue;
+                int last = -1;
+                for(int k = 0; k < nums.size(); k++){
+                    if((i & (1 << k))){
+                        ll a = sqrt(nums[j] + nums[k]);
+                        if(a * a == (nums[j] + nums[k])){
+                            if(k > 0 && f[i|(1<<j)][j] > 0 && nums[k] == nums[last])continue;
+                            f[i | (1 << j)][j] += f[i][k];
+                        }
+                        last = k;
+                    }
+                }
+            }
+        }
+        ll res = 0;
+        for(int i = 0; i < nums.size(); i++){
+            if(i > 0 && nums[i] == nums[i-1])continue;
+            res += f[(1 << n) - 1][i];
+        }
+        return res;
+    }
+};
 
 ```

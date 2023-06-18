@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-15 18:35:09
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-15 18:38:09
+ * @LastEditTime: 2023-06-17 08:53:09
  * @FilePath: /myLearning/算法/leetcode/换根&树形dp.md
 -->
 # 树型dp
@@ -72,7 +72,7 @@ public:
 # 换根dp 
 
 1. 树中距离之和 834
-
+* 第一遍从上到下正常深搜，先深度，再来更新父节点。第二遍从上到下，先用更新父节点，更新好了再深搜，子节点需要更新过的父节点值。
 ```cpp
 class Solution {
 public:
