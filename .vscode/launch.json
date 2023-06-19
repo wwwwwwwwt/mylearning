@@ -5,8 +5,7 @@
     "version": "0.2.0",
     "configurations": [
 
-
-        "cppStandard": "c++17";
+        "cppStandard": "c++20";
 
     ]
 }

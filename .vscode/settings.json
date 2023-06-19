@@ -100,5 +100,7 @@
         "*.ipp": "cpp",
         "*.inc": "cpp",
         "queue": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled",
+    "C_Cpp.default.cppStandard": "c++20"
 }
