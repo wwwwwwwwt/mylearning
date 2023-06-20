@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-07 19:51:33
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-17 09:47:49
+ * @LastEditTime: 2023-06-19 17:32:49
  * @FilePath: /myLearning/项目总结/cache.md
 -->
 # TinyCache项目详解
@@ -17,3 +17,22 @@
    1. 对缓存的访问操作需要加锁。
 3. 单机性能不够怎么办：
    1. 水平拓展，利用多台计算机并行处理提高性能，我们需要使缓存支持分布式。
+
+# 存储数据的结构怎么实现的？
+
+1. 首先定义了一个entry结构体，其中包括具体的key与value。
+2. 然后定义了一个Cache结构用于主缓存结构，其中包含一个cache的最大容量字节数，双向链表（链表的element就是entry）， 哈希表：用于将key与链表指针进行映射，回调函数，用于删除节点时调用回调函数。
+3. 最后为了支持并发读写，我们抽象出一个byteView结构对数据进行切片拷贝，防止用户在读数据时将原数据进行修改，再使用mutex，对用户的读写操作进行互斥，使其满足线程安全。
+
+# 主结构Group，相当于缓存的命名空间
+
+1. 主结构Group, 每个Group拥有一个唯一的名字，第二个属性是存储结构Cache， 第三个属性是没找到缓存时，需要从磁盘获得源数据的回调函数callback
+2. 回调函数交给用户进行设计，这里只设计了一个抽象接口，用户需要实现其get方法，或者在构建NewGroup时传入lambda函数。
+3. Group结构实现了Get方法，用于从缓存中取得值，要是缓存中没有就调用回调函数从源数据中获取，并放入缓存。
+4. 分布式节点：Group中有一个抽象方法peerspicker，用于根据key找到对应的节点进行调用get
+
+# 网络部分支持http与grpc
+* 抽象了关键结构体pickpeers与Get方法，用于利用一致性哈希找到对应节点的地址，和从地址获取结果的Get。
+* 起一个http节点用于存储gee与客户端交互，
+1. http：使用go语言自带的http标准库，定义了一个格式<groupname>/<key>，我们通过对url的分隔可以拿到对应的groupname与所查询的key，后期加入了一致性哈希时只需要知道key即可找到key映射的节点，拿到得到对应的地址如http:://127.0.0.1:8001/group进行查询。
+2. grpc：定义了protobuf Request：groupname与key，response：value， rpc服务get（requst）returns （response），每一个grpc服务都包含着一个哈希环，起服务的时候先把其他节点都注册进去

@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-04-08 09:42:35
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-18 17:20:24
+ * @LastEditTime: 2023-06-20 13:14:25
  * @FilePath: /myLearning/算法/leetcode/状态压缩dp.md
 -->
 # 状态压缩dp
@@ -193,6 +193,83 @@ public:
             res += f[(1 << n) - 1][i];
         }
         return res;
+    }
+};
+
+```
+
+5. 2305 公平分发饼干
+
+```cpp
+
+class Solution {
+public:
+    static const int N = 10;
+    int f[10][1<<N];
+    int distributeCookies(vector<int>& cookies, int k) {
+        int n = cookies.size();
+        memset(f, 0x3f, sizeof f);
+        int st = ((1 << n) - 1) ^ 0;
+        for(int cur = st; cur != 0; cur = (cur - 1) & st){
+            int sum = 0;
+            for(int num = 0; num < n; num++){
+                if(((cur >> num) & 1) == 1){
+                    sum += cookies[num];
+                }
+            }
+            f[0][0 | cur] =  sum;
+        } 
+        for(int i = 0; i < 1 << n; i++){
+            for(int j = 1; j < k; j++){
+                st = ((1 << n) - 1) ^ i;
+                for(int cur = st; cur != 0; cur = (cur - 1) & st){
+                    int sum = 0;
+                    for(int num = 0; num < n; num++){
+                        if((cur >> num & 1) == 1){
+                            sum += cookies[num];
+                        }
+                    }
+                    f[j][i | cur] = min(f[j][i | cur], max(f[j-1][i] , sum));
+                } 
+            }
+        }
+        return f[k-1][(1<<n) - 1];
+    }
+};
+```
+
+6. 1723 完成所有工作最短时间
+
+```cpp
+class Solution {
+public:
+    static const int N = 15;
+    int f[15][1<<N];
+    int cnt[1<<N];
+    int minimumTimeRequired(vector<int>& jobs, int k) {
+        memset(f, 0x3f, sizeof f);
+        int n = jobs.size();
+        for(int i = 0; i < 1<<n;i++){
+            int sum = 0;
+            for(int j = 0; j < n; j++){
+                if(i >> j & 1){
+                    sum += jobs[j];
+                }
+            }
+            cnt[i] = sum;
+        }
+        for(int i = ((1 << n) - 1); i != 0; i = (i-1)&((1<<n)-1)){
+            f[0][0|i] = cnt[i];
+        }
+        for(int i = 0; i < 1 << n; i ++){
+            for(int j = 1; j < k; j++){
+                int st = ((1 << n) - 1) ^ i;
+                for(int cur = st; cur != 0; cur = (cur - 1) & st){
+                    f[j][i | cur] = min(f[j][i|cur], max(f[j-1][i], cnt[cur]));
+                }
+            }
+        }
+        return f[k-1][(1<<n) - 1];
     }
 };
 
