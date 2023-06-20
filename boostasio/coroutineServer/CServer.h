@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-06-18 22:24:45
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-18 22:41:58
- * @FilePath: /cpptest/boostasio/coroutineServer/CServer.h
+ * @LastEditTime: 2023-06-20 15:58:34
+ * @FilePath: /myLearning/boostasio/coroutineServer/CServer.h
  */
 #pragma once
 #include <iostream>
@@ -13,6 +13,7 @@
 #include <string>
 #include <memory>
 #include <map>
+#include <mutex>
 #include "CSession.h"
 #include "IoServicePool.h"
 class CServer{
@@ -27,4 +28,5 @@ private:
     short _port;
     boost::asio::ip::tcp::acceptor _acceptor;
     std::map<std::string, std::shared_ptr<CSession>>_sessions;
+    std::mutex mtx_;
 };

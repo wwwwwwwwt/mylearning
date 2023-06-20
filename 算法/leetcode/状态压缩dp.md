@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-04-08 09:42:35
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-20 13:14:25
+ * @LastEditTime: 2023-06-20 21:40:59
  * @FilePath: /myLearning/算法/leetcode/状态压缩dp.md
 -->
 # 状态压缩dp
@@ -272,5 +272,131 @@ public:
         return f[k-1][(1<<n) - 1];
     }
 };
+
+```
+
+7. 1879 两个数组最小的异或值之和
+
+```cpp
+class Solution {
+public:
+    static const int N = 15;
+    int f[15][1<<N];
+    int cnt[1<<N];
+    int minimumXORSum(vector<int>& nums1, vector<int>& nums2) {
+        int n = nums1.size();
+        memset(f, 0x3f, sizeof f);
+        for(int i = 0; i < n; i++){
+            f[0][1<<i] = nums2[0] ^ nums1[i];
+        }
+        for(int i = 0; i < 1 << n; i++){
+            int sum = 0;
+            for(int j = 0; j < n; j++){
+                if(i >> j & 1)sum++;
+            }
+            cnt[i] = sum;
+        }      
+        for(int i = 0; i < 1 << n ;i++){
+            for(int j = 1; j < n; j++){
+                if(cnt[i] == j){
+                    for(int k = 0; k < n; k++){
+                        if((i & (1 << k)) == 0)f[j][i | 1<<k] = min(f[j][i|1<<k], f[j-1][i] + (nums2[j] ^ nums1[k]));
+                    }
+                }
+            }
+        }
+        return f[n-1][(1<<n)-1];
+    }
+};
+```
+
+
+8. 2172 数组的最大与和
+
+超时答案：
+```cpp
+class Solution {
+public:
+    static const int N = 19;
+    int f[10][1<<N];
+    int cnt[1<<N];
+    int ans[N][1<<N];
+    int maximumANDSum(vector<int>& nums, int numSlots) {
+        int n =  nums.size();
+        for(int i= 0;  i < 1 <<n; i++){
+            int sum = 0;
+            for(int j = 0; j < n; j++){
+                if((i >> j) & 1)sum++;
+            }
+            cnt[i] = sum;
+        }
+        for(int i = 0; i < 1<<n; i++){
+            if(cnt[i] == 1 || cnt[i] == 2){
+                int sum = 0;
+                for(int k = 0; k < n; k++){
+                    if(((i >> k) & 1) == 1){
+                        sum = sum + (nums[k] & 1);
+                        
+                    }
+                }
+                f[1][i] = sum;
+            }
+        }
+        for(int j = 2 ; j<= numSlots; j++){
+            for(int i = 0; i < 1<<n; i++){
+                int sum = 0;
+                if(cnt[i] == 1 || cnt[i] == 2){
+                    for(int k = 0; k < n; k++){
+                        if(((i >> k) & 1) == 1){
+                            ans[j][i] = ans[j][i] + (nums[k] & j);
+                        }
+                    }
+                }
+            }
+        }
+
+        for(int i = 0; i < 1 << n; i++){
+            for(int j = 2; j <= numSlots; j++){
+                if(cnt[i] > (j - 1) * 2)continue;
+                int st = ((1<<n) - 1) ^ i;
+                if(cnt[st] > (numSlots - j + 1) * 2)continue;
+                f[j][i] = max(f[j][i], f[j-1][i]);
+                for(int cur = st; cur != 0; cur = (cur - 1) & st){
+                    if(cnt[cur] == 1 || cnt[cur] == 2){
+                        f[j][i | cur] = max(f[j][i|cur], f[j-1][i] + ans[j][cur]);
+                    }
+                }
+            }
+        }
+        int res = 0;
+        for(int i = 1; i <=numSlots; i++){
+            res = max(res, f[i][(1<<n) - 1]);
+        }
+        return res;
+    }
+};
+```
+
+```cpp
+class Solution {
+public:
+    static const int N = 19;
+    int f[1<<N];
+    int maximumANDSum(vector<int>& nums, int numSlots) {
+        int n = 2 * numSlots;
+        int res=  0;
+        for(int i = 0; i < 1 << n; i++){
+            int cnt = __builtin_popcount(i);
+            if(cnt >= nums.size())continue;
+            for(int j = 0; j < n; j++){
+                if(i >> j & 1)continue;
+                f[i|1<<j] = max(f[i|1<<j], f[i] + (nums[cnt] & (j / 2 + 1)));
+                res = max(res, f[i|1<<j]);
+            }
+        }
+        return res;
+    }
+};
+
 
 ```
