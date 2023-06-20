@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-07 19:51:33
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-19 17:32:49
+ * @LastEditTime: 2023-06-20 14:41:45
  * @FilePath: /myLearning/项目总结/cache.md
 -->
 # TinyCache项目详解
@@ -36,3 +36,8 @@
 * 起一个http节点用于存储gee与客户端交互，
 1. http：使用go语言自带的http标准库，定义了一个格式<groupname>/<key>，我们通过对url的分隔可以拿到对应的groupname与所查询的key，后期加入了一致性哈希时只需要知道key即可找到key映射的节点，拿到得到对应的地址如http:://127.0.0.1:8001/group进行查询。
 2. grpc：定义了protobuf Request：groupname与key，response：value， rpc服务get（requst）returns （response），每一个grpc服务都包含着一个哈希环，起服务的时候先把其他节点都注册进去
+
+# 防止缓存击穿
+
+1. 整体思路：锁加上哈希表记录当前正在处理的key，一个新的查询进来，如果发现这个key在哈希表中说明这个key正在被处理，就释放锁，等待哈希表中的结果。首次查询这个key的函数会查询结束后会将哈希表中的值修改为查询的值，并使用Done唤醒所有等待的查询，返回值。
+
