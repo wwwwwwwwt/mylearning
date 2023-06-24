@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-06-18 21:14:01
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-18 21:16:54
- * @FilePath: /cpptest/boostasio/coroutineServer/const.h
+ * @LastEditTime: 2023-06-24 16:06:45
+ * @FilePath: /myLearning/boostasio/coroutineServer/const.h
  */
 #pragma once
 
@@ -16,4 +16,4 @@
 
 enum MSG_IDS{
     MSG_HEAD_WORLD = 1001
-}
+};
