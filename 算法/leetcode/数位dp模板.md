@@ -2,11 +2,11 @@
  * @Author: zzzzztw
  * @Date: 2023-03-20 08:39:20
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-20 09:45:02
- * @FilePath: /cpptest/算法/leetcode/数位dp模板.md
+ * @LastEditTime: 2023-07-01 10:03:24
+ * @FilePath: /myLearning/算法/leetcode/数位dp模板.md
 -->
 # 数位dp
-1. leetcode： 233 600 902 1067 1397
+1. leetcode： 233 600(finish) 902 1067 1397
 
 leetcode 1012
 核心具体模板代码：
@@ -91,5 +91,76 @@ public:
         return dfs(0,0,true, false, m, str);
     }
 };
+
+```
+
+leetcode 1012 至少有 1 位重复的数字
+
+```cpp
+class Solution {
+public:
+    static const int N = 10;
+    int f[N][1<<10];
+    int dfs(int i,int mask, bool islimit, bool isnum,int n, string s){
+        if(i == n){
+            return isnum;
+        }
+        if(!islimit && isnum && f[i][mask] != -1)return f[i][mask];
+        uint64_t res = 0;
+        if(!isnum){
+            res += dfs(i+1, mask, false, isnum , n, s);
+        }
+        int up = islimit ? s[i] - '0': 9;
+
+        for(int j = isnum ? 0: 1; j<=up;j++){
+            if((mask >> j &1) == 0)
+            res += dfs(i+1, mask|(1<<j), islimit && j == up ,true, n, s);
+        }
+        if(!islimit&& isnum){
+            f[i][mask] = res;
+        }
+        return res;
+
+    }
+    int numDupDigitsAtMostN(int n) {
+        memset(f,-1,sizeof f);
+        string str = to_string(n);
+        int m = str.size();
+        return n - dfs(0,0,true,false,m,str);
+    }
+};
+```
+
+leetcode 600
+
+```cpp
+class Solution {
+public:
+    static const int N = 32;
+    int f[N][2];
+    int dfs(int i, bool islimit,bool fill, string &str){
+        if(i == str.size())return 1;
+        if(!islimit && f[i][fill] != -1)return f[i][fill];
+        int res = 0;
+        int up = islimit ? (str[i] - '0') : 1;
+        int up2 = fill ? 0 : 1;
+        for(int j = 0; j <= min(up, up2); j++){
+            res += dfs(i + 1,  islimit && (j == up),  j == 1, str);
+        }
+        if(!islimit)f[i][fill] = res;
+        return res;
+    }
+    int findIntegers(int n) {
+        string str;
+        while(n){
+            str += to_string(n & 1);
+            n>>=1;
+        }
+        reverse(str.begin(), str.end());
+        memset(f, -1, sizeof f);
+        return dfs(0,  true,  false, str);
+    }
+};
+
 
 ```
