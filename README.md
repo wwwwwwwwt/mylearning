@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-02-27 13:29:00
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-19 09:28:38
+ * @LastEditTime: 2023-07-08 17:08:40
  * @FilePath: /myLearning/README.md
 -->
 # 学习c++时写的一些小case和读的一些书
@@ -18,6 +18,7 @@
 9. to do <<Effective Modern c++>>  
 10. to do <<c++17 stl cookbool>>
 11. ....
+12. 更多关于go的知识 请见golearning仓库
 
 * 小的轮子：基于c++11的线程池（tinythreadpool-c++11），简单的内存池和测试框架（memorypool），手写vector（vec），时间轮定时器（TimeWheel），ebpf中bcc的一些简单实现
 * 简单的设计模式（DesignMode）：如单例模式中的懒汉和饿汉模式，观察者模式，工厂模式中的简单工厂和抽象工厂模式
