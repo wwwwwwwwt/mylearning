@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-03-29 10:16:28
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-04-27 12:24:36
+ * @LastEditTime: 2023-07-11 11:03:37
  * @FilePath: /myLearning/算法/leetcode/线性dp.md
 -->
 # 线性dp 在这里分为 递推类型，二维矩阵类型， 打家劫舍，状态机类型（买卖股票）
@@ -154,4 +154,28 @@ public:
 };
 
 
+```
+
+6. 最大子序交替和1911
+
+```cpp
+class Solution {
+public:
+    using ll = long long;
+    static const int N = 100010;
+    ll f[N][2][2];
+    long long maxAlternatingSum(vector<int>& nums) {
+        f[0][1][1] = nums[0];
+        f[0][0][0] = 0;
+        f[0][1][0] = f[0][0][1] = INT_MIN;
+        for(int i = 1; i < nums.size(); i++){
+            f[i][1][1] = max(f[i-1][1][0], f[i-1][0][0]) + nums[i];
+            f[i][0][1] = max(f[i-1][0][1], f[i-1][1][1]);
+            f[i][1][0] = max(f[i-1][1][1], f[i-1][0][1]) - nums[i];
+            f[i][0][0] = max(f[i-1][0][0], f[i-1][1][0]);
+        }
+        int n = nums.size();
+        return max(f[n-1][1][1], f[n-1][0][1]);
+    }
+};
 ```
