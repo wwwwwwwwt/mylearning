@@ -2,8 +2,8 @@
  * @Author: zzzzztw
  * @Date: 2023-02-24 11:28:22
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-03-18 11:10:23
- * @FilePath: /cpptest/tinythreadpool-c++11/threadpool.h
+ * @LastEditTime: 2023-07-17 19:56:33
+ * @FilePath: /myLearning/tinythreadpool-c++11/threadpool.h
  */
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
@@ -73,7 +73,6 @@ private:
 };
 
 class ThreadPool{
-
 private:
     SafeQueue<std::function<void()>>queue_;
     std::vector<std::thread>threads_;
@@ -83,7 +82,6 @@ private:
 
 private:
     class ThreadWorker{
-    
     public:
         ThreadWorker(ThreadPool* pool, int id):pool_(pool),id_(id){};
         void operator()(){
