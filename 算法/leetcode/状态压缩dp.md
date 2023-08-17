@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-04-08 09:42:35
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-20 21:40:59
+ * @LastEditTime: 2023-08-17 12:10:37
  * @FilePath: /myLearning/算法/leetcode/状态压缩dp.md
 -->
 # 状态压缩dp
@@ -395,6 +395,43 @@ public:
             }
         }
         return res;
+    }
+};
+
+
+```
+
+
+9. 1434 每个人不同帽子的方案数量
+* 思路：帽子很多，人很少，以人为状态压缩， f[i][j]表示i状态下，遍历到第j个帽子，可以有的方案数
+
+```cpp
+class Solution {
+public:
+    using ll = long long;
+    ll f[1 << 11][50];
+    vector<int>g[100];
+    static const int MOD = 1e9 + 7;
+    int numberWays(vector<vector<int>>& hats) {
+        set<int>st;
+        for(int i = 0; i < hats.size(); i++){
+            for(int j = 0; j < hats[i].size(); j++){
+                g[hats[i][j]].push_back(i);
+            }
+        }
+        int n = hats.size();
+        f[0][0] = 1;
+        for(int j = 1; j<= 40; j++){
+            for(int i = 0; i < (1 << n); i++){
+                f[i][j] += f[i][j-1]; //第j个帽子不选
+                for(auto c : g[j]){ //选了
+                    if(((i >> c) & 1) == 0){ // 帽子对应的人不在集合中
+                        f[i|(1<<c)][j] += f[i][j-1]; // 状态转移过去，第j个帽子选了 更新新的状态。
+                    }
+                }
+            }
+        }
+        return f[(1<<n) - 1][40] %MOD;
     }
 };
 
