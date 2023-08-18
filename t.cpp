@@ -77,6 +77,55 @@ __attribute__((constructor))void func(){
     printf("%s\n", "12345");
 }
 
+struct ListNode{
+    int val;
+    ListNode* next;
+    ListNode() : val(0), next(nullptr){};
+    ListNode(int v):val(v), next(nullptr){};
+};
+
+void build(vector<int>&a){
+    ListNode* dummyhead = new ListNode(0);
+    ListNode *cur = dummyhead;
+    for(int i = 0; i < a.size(); i++){
+        ListNode* node = new  ListNode(a[i]);
+        cur->next = node;
+        cur = cur->next;
+    }
+
+    unordered_map<int ,int>mp;
+    cur = dummyhead;
+    while(cur && cur->next){
+        mp[cur->next->val]++;
+        cur = cur->next;
+    }
+
+    cur = dummyhead;
+    while(cur && cur->next){
+        while(cur && cur->next && mp[cur->next->val] > 1){
+            ListNode *node = cur->next;
+            cur->next = cur->next->next;  
+            delete node;
+        }
+        cur = cur->next;
+    }
+
+    cur = dummyhead;
+    while(cur->next){
+        cout<<cur->next->val<<" ";
+        cur = cur->next;
+    }
+    cout<<endl;
+    cur = dummyhead;
+    while(cur && cur->next){
+        ListNode* node = cur->next;
+        cur = cur->next->next;
+        delete node;
+    }
+    delete dummyhead;
+
+}
+
 void func3(int a, int b){
     cout<<&a<<" "<<&b<<endl;
 }
@@ -146,8 +195,14 @@ int main(){
     cout<<"testun: "<<sizeof(testun)<<endl;
     dervive *der = new dervive();
     cout<<sizeof(der)<<endl;
-   base* testdd = dynamic_cast<base*>(der);
+    base* testdd = dynamic_cast<base*>(der);
     cout<<testdd->a<<endl;
+
+
+    vector<int>list = {1,1,2,2,3,4,5,6,7};
+
+    build(list);
+
     return 0;
 }
 
