@@ -123,13 +123,6 @@ private:
     shared_count* shared_count_;
 };
 
-template<typename T, typename U>
-shared_ptr<T> reinterpret_cast_ptr(const shared_ptr<int>&other)noexcept
-{
-   T *ptr = reinterpret_cast<T*>(other.get());
-    return shared_ptr<bool>(other, ptr);
-}
-
 int main(){
     shared_ptr<int>a(new int(10));
     bool st = a;

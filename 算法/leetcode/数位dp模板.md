@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-03-20 08:39:20
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-07-01 10:03:24
+ * @LastEditTime: 2023-08-20 09:44:32
  * @FilePath: /myLearning/算法/leetcode/数位dp模板.md
 -->
 # 数位dp
@@ -162,5 +162,39 @@ public:
     }
 };
 
+
+```
+
+111 双周赛t4
+
+* 问数能不能整除k，且奇数偶数位数相同，记忆化i，奇数偶数的cnt， 模k的余数val
+
+```cpp
+class Solution {
+public:
+    static const int N = 10;   
+    int f[N][N][N][30];
+    int dfs(int i, int cnt1, int cnt2, int val, long long curnum, bool islimit, bool isnum, string &str, int k){
+        if(i == str.size())return isnum &&  (curnum % k == 0) && (cnt1 == cnt2);
+        if(!islimit && isnum && f[i][cnt1][cnt2][val] != -1)return f[i][cnt1][cnt2][val];
+        int res = 0;
+        if(!isnum)res += dfs(i+1, 0,0,0,0,false, false, str, k);
+        int up = islimit ? str[i] - '0' : 9;
+        for(int j = isnum ? 0 : 1; j<=up; j++){
+            res += dfs(i + 1, cnt1 + (j%2 == 1), cnt2 + (j%2 == 0), (curnum * 10 + j)% k, curnum * 10 + j, islimit && (j == up),true, str, k);
+        }
+        if(!islimit && isnum)f[i][cnt1][cnt2][val] = res;
+        return res;
+    }
+    int numberOfBeautifulIntegers(int low, int high, int k) {
+        memset(f, -1, sizeof f);
+        string str1 = to_string(high);
+        int res1 = dfs(0,0,0,0,0,true, false, str1, k);
+        memset(f, -1, sizeof f);
+        string str2 = to_string(low - 1);
+        int res2 = dfs(0,0,0,0,0,true, false, str2, k);
+        return res1-res2;
+    }
+};
 
 ```

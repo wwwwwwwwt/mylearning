@@ -161,6 +161,15 @@ public:
 };
 
 
+bool isbigendian(){
+    int num = 0x00000001;
+
+    cout<<(int)*(char*)&num<<endl;
+
+    if((int)*(char*)&num == 1)return false;
+    return true; 
+}
+
 
 
 int main(){
@@ -202,6 +211,12 @@ int main(){
     vector<int>list = {1,1,2,2,3,4,5,6,7};
 
     build(list);
+
+    cout<<"----------------"<<endl;
+
+    if(isbigendian())cout<<"大端"<<endl;
+    else cout<<"小端"<<endl;
+
 
     return 0;
 }
