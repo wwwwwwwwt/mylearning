@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-07-13 19:32:34
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-08-24 11:16:52
+ * @LastEditTime: 2023-08-26 22:00:55
  * @FilePath: /myLearning/test2.cpp
  */
 #include <bits/stdc++.h>
@@ -14,9 +14,10 @@ struct ListNode{
     ListNode(int v):val(v), next(nullptr){};
 };
 
+
+
 int main(){
-    
- 
+   
     vector<int>a = {0,1,2,3,4,5,6};
 
     vector<int>b = std::move(a);
@@ -52,6 +53,7 @@ int main(){
     }
     cout<<endl;
 
+    
 
     return 0;
     
