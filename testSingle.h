@@ -1,8 +1,16 @@
+/*
+ * @Author: zzzzztw
+ * @Date: 2023-08-23 13:47:04
+ * @LastEditors: Do not edit
+ * @LastEditTime: 2023-09-08 16:16:13
+ * @FilePath: /myLearning/testSingle.cpp
+ */
 #pragma once
 #include <mutex>
 #include <atomic>
 #include <memory>
 #include <iostream>
+#include <deque>
 
 
 template<typename T>
@@ -30,3 +38,4 @@ private:
 
 template<typename T>
 std::shared_ptr<T> SingleIns<T>::ins_ = nullptr;
+

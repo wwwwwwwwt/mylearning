@@ -103,5 +103,6 @@
     },
     "C_Cpp.errorSquiggles": "disabled",
     "C_Cpp.default.cppStandard": "c++20",
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "cmake.sourceDirectory": "/home/zhang/myLearning/TimeWheel/TimeWheel-master"
 }
