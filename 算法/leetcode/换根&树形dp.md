@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-06-15 18:35:09
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-06-17 08:53:09
+ * @LastEditTime: 2023-09-17 00:55:04
  * @FilePath: /myLearning/算法/leetcode/换根&树形dp.md
 -->
 # 树型dp
@@ -114,3 +114,41 @@ public:
 };
 ```
 
+```cpp
+
+class Solution {
+public:
+    static const int  N = 1e5 + 10;
+    vector<int>g[N];
+    int sum[N], up[N];
+    map<pair<int, int>, int>d;
+    void dfs1(int u, int fa){
+        for(auto c : g[u]){
+            if(c == fa)continue;
+            dfs1(c, u);
+            sum[u] += sum[c] + d[{c, u}];
+        }
+    }
+    void dfs2(int u, int fa){
+        for(auto c : g[u]){
+            if(c == fa)continue;
+            up[c] = up[u] + sum[u] - sum[c] + (d[{u, c}] == 1 ? 1 : -1);
+            dfs2(c, u);
+        }
+    }
+    vector<int> minEdgeReversals(int n, vector<vector<int>>& edges) {
+        for(auto x : edges){
+            int a = x[0], b = x[1];
+            g[a].push_back(b);
+            g[b].push_back(a);
+            d.insert({{a, b}, 1});
+        }
+        dfs1(0,-1);
+        dfs2(0, -1);
+        vector<int>res;
+        for(int i = 0; i < n; i++)res.push_back(sum[i] + up[i]);
+        return res;
+    }
+};
+
+```
