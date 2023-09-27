@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-09-18 14:21:05
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-09-19 14:43:00
+ * @LastEditTime: 2023-09-27 22:01:32
  * @FilePath: /myLearning/算法/acwing/dp好题.md
 -->
 
@@ -148,4 +148,101 @@ int main(){
     }
     return 0;
 }
+```
+
+## 安排邮筒 lc1478
+* 抽象成 f[i][j]表示分成i份，前j个房子 最小距离， 需要枚举， 前一个点进行dp 类似整理书架那题。
+* 预处理区间中距离，主要这个区间内，不管邮箱在哪里总距离都不变，总距离由递推得出。
+```cpp
+class Solution {
+public:
+    static const int N = 110;
+    int f[N][N], dis[N][N];
+    int minDistance(vector<int>& houses, int k) {
+        sort(houses.begin(), houses.end());
+        for(int i = 0; i < houses.size(); i++){
+            for(int j = i; j >= 0; j--){
+                if(i == j)dis[i][i] = 0;
+                if(i == j + 1)dis[i][j] = houses[i] - houses[j];
+                else if(i > j + 1)dis[i][j] = dis[i-1][j+1] + houses[i] - houses[j]; 
+            }
+        }
+        memset(f, 0x3f, sizeof f);
+        
+        for(int i = 0; i < houses.size(); i++)f[1][i] = dis[i][0];
+        for(int i = 1; i <= k; i++){
+            for(int j = i - 1; j < houses.size(); j++){
+                if(j == 0)f[i][j] = min(f[i][j], dis[j][0]);
+                else{
+                    for(int p = j - 1; p >= i - 2; p--){
+                        if(p < 0)continue;
+                        f[i][j] = min(f[i][j], f[i - 1][p] + dis[j][p + 1]);
+                    }
+                }
+            }
+        }
+        return f[k][houses.size() - 1];
+    }
+};
+```
+
+## 单调队列优化多重背包
+* 01 / 完全 / 混合背包都可以转换为多重背包来做吗， 完全背包相当于给了 容量 /物品体积 个物品
+```cpp
+#pragma G++ optimize(2)
+#include <bits/stdc++.h>
+using namespace std;
+long long f[20010], g[20010];
+int q[20010];
+
+int main(){
+    int n,m;
+    cin>>n>>m;
+    for(int i = 0; i < n; i++){
+        int v, w, s; //每组的体积，价值，数量
+        cin>>v>>w>>s;
+        memcpy(g, f, sizeof f); // 滚动数组优化一维空间
+        for(int j = 0; j < v; j++){ // 枚举 模 体积后的余数
+            int hh = 0, tt = -1; // 单调队列，队列窗口大小是当前元素的体积 * 数量，内部元素是在加小于s个当前物品的条件下，能转移到当前k体积条件下的体积值，队首为能得到的最大值 （需要加上体积差 / 物品体积 * 物品价值）
+            for(int k = j; k <= m; k+=v){ // 枚举体积
+                while(hh <= tt && q[hh] < k - s * v)++hh; // 如果发现队头元素 小于当前体积减去所有当前物品个数*体积，代表着当前单调队列中的最大值不能转移到当前体积内 那么就将队头元素pop掉
+                while(hh <= tt && g[q[tt]] <= g[k] - (k - q[tt])/v * w)--tt;
+                q[++tt] = k;
+                f[k] = max(f[k], g[q[hh]] + (k - q[hh]) / v * w);
+            } 
+        }
+    }
+    cout<<f[m]<<endl;
+    return 0;
+}
+
+```
+
+## 填满背包容量（可以超过）的最低费用
+* 每一位都可以和0取个max，表示可以超过当前容量。a，b分别为两维的容量，w为费用
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 1010;
+int a[N], b[N], w[N];
+int f[N][N];
+int main(){
+    int n, m;
+    cin>>n>>m;
+    int t;
+    cin>>t;
+    memset(f, 0x3f, sizeof f);
+    f[0][0] = 0;
+    for(int i = 0; i < t; i++)cin>>a[i]>>b[i]>>w[i];
+    for(int i = 0; i < t; i++){
+        for(int j = n; j >= 0; j--){
+            for(int k = m; k >= 0; k--){
+                f[j][k] = min(f[j][k], f[max(j - a[i], 0)][max(k - b[i], 0)] + w[i]);
+            }
+        }
+    }
+    cout<<f[n][m]<<endl;
+    return 0;
+}
+
 ```
