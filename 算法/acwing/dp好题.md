@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-09-18 14:21:05
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-09-27 22:01:32
+ * @LastEditTime: 2023-09-28 21:33:28
  * @FilePath: /myLearning/算法/acwing/dp好题.md
 -->
 
@@ -242,6 +242,217 @@ int main(){
         }
     }
     cout<<f[n][m]<<endl;
+    return 0;
+}
+
+```
+
+## 有依赖的背包问题， 树上01背包
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 110;
+int n, m;
+int f[N][N], v[N], w[N];
+vector<int>g[N];
+void dfs(int u){
+    for(int i = v[u]; i <= m; i++)f[u][i] = w[u]; // 只选当前u为根的节点，初始化
+    for(auto c : g[u]){ // 枚举子树节点
+        dfs(c);
+        for(int j = m; j >= v[u]; j--){ // 01背包倒序枚举总体积，必须大于当前根的体积才能选根节点的子树。
+            for(int k = 0; k <= j - v[u]; k++){ // 给子树剩余的空间为当前背包总体积 - 根体积
+                f[u][j] = max(f[u][j], f[u][j - k] + f[c][k]);
+            }
+        }
+    }
+}
+int main(){
+    cin>>n>>m;
+    int root = 0;
+    for(int i = 1; i <= n; i++){
+        int p;
+        cin>>v[i]>>w[i]>>p;
+        if(p == -1)root = i;
+        else{
+            g[p].push_back(i);
+        }
+    }
+    dfs(root);
+    cout<<f[root][m]<<endl;
+    return 0;
+}
+```
+
+## 背包问题求具体方案
+* 字典序最小需要倒序枚举物品，没有这个条件的话无所谓
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 1010;
+int f[N][N], v[N], w[N];
+using pii = pair<int, int>;
+pii g[N][N];
+int main(){
+    int n, m;
+    cin>>n>>m;
+    for(int i = 1; i <= n; i++){
+        cin>>v[i]>>w[i];
+    }
+    for(int i = n; i >= 1; i--){
+        for(int j = 0; j <= m; j++){
+            f[i][j] = f[i + 1][j];
+            g[i][j] = {j, 0};
+            if(j >= v[i]){
+                if(f[i][j] <= f[i + 1][j - v[i]] + w[i]){
+                    f[i][j] = f[i + 1][j - v[i]] + w[i];
+                    g[i][j] = {j - v[i], i};
+                }
+            }
+        }
+    }
+    int j = m, i = 1;
+    vector<int>res;
+    while(j){
+        if(g[i][j].second != 0)res.push_back(g[i][j].second);
+        j = g[i][j].first;
+        i++;
+    }
+    for(int i = 0; i < res.size(); i++)cout<<res[i]<<" ";
+    return 0;
+}
+
+```
+
+
+## 背包问题求最优解的方案数
+* g数组记录当前容量背包最优解方案数。
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 1010, Mod = 1e9 + 7;
+long long f[N], g[N];
+int v[N], w[N];
+
+int main(){
+    int n,m;
+    cin>>n>>m;
+    for(int i = 0; i < n; i++)cin>>v[i]>>w[i];
+    g[0] = 1;
+    long long res = 0;
+    for(int i = 0; i < n; i++){
+        for(int j = m; j >= v[i]; j--){
+            int maxv = max(f[j], f[j - v[i]] + w[i]);
+            long long cnt = 0;
+            if(maxv == f[j])cnt += g[j];
+            if(maxv == f[j - v[i]] + w[i])cnt += g[j - v[i]];
+            f[j] = maxv;
+            cnt %= Mod;
+            g[j] = cnt;
+            res = max(res, f[j]);
+        }
+    }
+    long long ans = 0;
+    for(int i = 0; i <= m; i++){
+        if(f[i] == res){
+            ans = (ans + g[i])%Mod;
+        }
+    }
+    cout<<ans<<endl;
+    return 0;
+}
+
+```
+
+## 能量石， 贪心 + dp
+* 贪心思路如耍杂技的牛和国王游戏，排序完按照这个序列做01背包，但由于依赖背包容量（时间）不一定背包越大结果最优，所以一遍做，一边记录最大值，
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+const int  N = 10010;
+int f[N];
+struct Node{
+    int s,e,l;
+}a[N];
+
+int main(){
+    int t;
+    cin>>t;
+    for(int i = 1; i <= t; i++){
+        memset(f, 0, sizeof f);
+        memset(a, 0, sizeof a);
+        int n, m = 0;
+        cin>>n;
+        for(int i = 0; i < n; i++){
+            int s, e, l;
+            cin>>s>>e>>l;
+            a[i] = {s, e, l};
+            m += s;
+        }
+        sort(a, a + n, [&](auto&p, auto&q){
+            return p.s * q.l < q.s * p.l;
+        });
+        int res = 0;
+        for(int i = 0; i < n; i++){
+            for(int j = m; j >= a[i].s; j--){
+                f[j] = max(f[j], f[j - a[i].s] + a[i].e - (j - a[i].s) * a[i].l);
+                res = max(res, f[j]);
+            }
+        }
+       cout<<"Case #"<<i<<": "<<res<<endl;
+    }
+    return 0;
+}
+
+```
+
+## 有依赖的分组背包，组内成员比较少---二进制枚举 + 01背包
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 110;
+vector<int>g[N];//记录依赖节点的组内节点
+vector<int>q; // 记录依赖节点实际下标
+int v1[N], v2[N], w1[N], w2[N]; // v1w1为依赖背包体积价值， v2w2为组内子节点体积价值
+int f[32010]; // dp
+int main(){
+    int m,n;
+    cin>>m>>n;
+    for(int i = 1; i <= n; i++){
+        int a, b, p;
+        cin>>a>>b>>p;
+        if(p == 0){
+            q.push_back(i);
+            v1[i] = a, w1[i] = b;
+        }else{
+            g[p].push_back(i);
+            v2[i] = a, w2[i] = b;
+        }
+    }
+    // 以上全为建图
+
+
+    for(int i = 0; i < q.size(); i++){ // 枚举依赖背包节点
+        for(int j = m; j >= 0; j--){ // 01背包体积遍历
+            int idx = q[i]; //依赖背包下标
+            int tv = v1[idx], tw = v1[idx] * w1[idx]; // 本题价值为体积 * 价值参数
+            for(int k = 0; k < (1 << g[idx].size()); k++){ // 二进制枚举 组内选哪个
+                tv = v1[idx], tw = v1[idx] * w1[idx]; // 每遍历一次就初始化一下
+                if(j >= tv)f[j] = max(f[j], f[j - tv] + tw);
+                for(int o = 0; o < g[idx].size(); o++){ // 枚举1
+                    if((k >> o) & 1){
+                        int curidx = g[idx][o]; // 组内背包实际下标
+                        tv += v2[curidx], tw += w2[curidx] * v2[curidx]; // 加上
+                        if(j >= tv)f[j] = max(f[j], f[j - tv] + tw);
+                    }
+                }
+            }
+           
+        }
+    }
+    cout<<f[m]<<endl;
     return 0;
 }
 
