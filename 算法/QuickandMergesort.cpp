@@ -1,7 +1,41 @@
+/*
+ * @Author: zzzzztw
+ * @Date: 2023-05-29 14:53:53
+ * @LastEditors: Do not edit
+ * @LastEditTime: 2023-10-07 16:30:39
+ * @FilePath: /myLearning/算法/QuickandMergesort.cpp
+ */
 #include <bits/stdc++.h>
 
 using namespace std;
 
+// 开128位
+#include<bits/stdc++.h>
+using namespace std;
+inline __int128 read(){
+    __int128 x = 0, f = 1;
+    char ch = getchar();
+    while(ch < '0' || ch > '9'){
+        if(ch == '-')
+            f = -1;
+        ch = getchar();
+    }
+    while(ch >= '0' && ch <= '9'){
+        x = x * 10 + ch - '0';
+        ch = getchar();
+    }
+    return x * f;
+}
+inline void print(__int128 x){
+    if(x < 0){
+        putchar('-');
+        x = -x;
+    }
+    if(x > 9)
+        print(x / 10);
+    putchar(x % 10 + '0');
+}
+using ll = __int128_t;
 
 int n;
 const int N = 100;

@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-04-08 09:42:35
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-08-17 12:10:37
+ * @LastEditTime: 2023-10-06 20:18:33
  * @FilePath: /myLearning/算法/leetcode/状态压缩dp.md
 -->
 # 状态压缩dp
@@ -437,3 +437,60 @@ public:
 
 
 ```
+
+10. 玉米田
+* 玉米田的输入每一行抽象成一个二进制数a[i],把合法状态a的子集合法状态b记录在g[a]中,最后根据题意枚举每一行，枚举和这行合法状态，再枚举他的子集对应上一行的状态就行。
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 13, M = 1 << N, Mod = 1e8;
+using  ll = long long;
+ll f[N][M];
+vector<int>g[M];
+int a[N];
+bool check(int x, int y){
+    return (y == (x | y)) && !(x &(x >> 1));
+}
+bool check2(int x, int y){
+    return !(x & (x >> 1)) && !(y &(y >> 1)) && !(x & y);
+}
+int main(){
+    int n, m;
+    cin>>n>>m;
+    for(int i = 1; i <= n; i++){
+        int num = 0;
+        for(int j = 0; j < m; j++){
+            int t;
+            cin>>t;
+            num = num<<1 | t;
+        }
+        a[i] = num;
+    }
+    for(int i = 0; i < 1 << m; i++){
+        for(int j = 0; j < 1 << m; j++){
+            if(check2(i, j)){
+                g[i].push_back(j);
+            }
+        }
+    }
+    for(int i = 0; i < 1 << m; i++){
+        if(check(i, a[1]))f[1][i] = 1;
+    }
+    ll res = 0;
+    for(int i = 1; i <= n; i++){
+        for(int j = 0; j < 1 << m; j++){
+            if(check(j , a[i]))for(auto c : g[j]){
+                f[i][j] = (f[i][j] + f[i - 1][c])%Mod;
+            }
+            if(i == n)res = (res + f[i][j])%Mod;
+        }
+        
+    }
+    cout<<res<<endl;
+    return 0;
+}
+```
+
+11. 炮兵阵地
+
+12. 愤怒小鸟
