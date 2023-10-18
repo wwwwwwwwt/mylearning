@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-09-18 14:21:05
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-09-28 21:33:28
+ * @LastEditTime: 2023-10-17 13:08:21
  * @FilePath: /myLearning/算法/acwing/dp好题.md
 -->
 
@@ -455,5 +455,147 @@ int main(){
     cout<<f[m]<<endl;
     return 0;
 }
+
+```
+
+## CSP-J2019 纪念品
+
+* 做t-1天完全背包，这一天的盈利是-今天价格 + 明天价格， 每一轮背包容量都会改变。
+
+```cpp
+#pragma GCC optimize(2)
+#include <bits/stdc++.h>
+using namespace std;
+using ll = long long;
+using pii = pair<int, int>;
+int T, N, M;
+int price[110][110];
+int f[10010];
+void solve() {
+    cin>>T>>N>>M;
+    int res = 0;
+    for(int i = 1; i <= T; i++){
+        for(int j = 1; j <= N; j++){
+            cin>>price[i][j];
+        }
+    }
+    for(int i = 1; i < T; i++){
+        memset(f, 0, sizeof f);
+        for(int j = 1; j <= N; j++){
+            for(int k = price[i][j]; k <= M; k++){
+                f[k] = max(f[k], f[k - price[i][j]] - price[i][j] + price[i + 1][j]);
+            }
+        }
+        M = max(M, f[M] + M);
+    }
+    cout<<M<<endl;
+}
+int main(){
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    solve();
+    return 0;
+}
+```
+
+## 树形dp
+
+1. 所有边都需要被看到
+
+```cpp
+#pragma GCC optimize(2)
+#include <bits/stdc++.h>
+using namespace std;
+using ll = long long;
+using pii = pair<int, int>;
+const int N = 1500;
+vector<int>g[N];
+int f[N][2];
+int n;
+void dfs(int u, int fa){
+    f[u][0] = 0, f[u][1] = 1;
+    for(auto c : g[u]){
+        if(c != fa){
+            dfs(c, u);
+            f[u][0] += f[c][1];
+            f[u][1] += min(f[c][0], f[c][1]);    
+        }
+    }
+}
+int main(){
+    while(~scanf("%d",&n)){
+        for(int i = 0; i <= n; i++)g[i].clear();
+        memset(f, 0x3f, sizeof f);
+        for(int i = 0; i < n; i++){
+            int a, b, sz;
+            scanf("%d:(%d)", &a, &sz);
+            while (sz--) {
+                cin >> b;
+                g[a].push_back(b);
+                g[b].push_back(a);
+            }
+        }
+        dfs(1, -1);
+        cout<<min(f[1][0], f[1][1])<<endl;
+    }
+    return 0;
+}
+
+```
+
+2. 所有点都需要被看到
+
+```cpp
+#pragma GCC optimize(2)
+#include <bits/stdc++.h>
+using namespace std;
+using ll = long long;
+using pii = pair<int, int>;
+const int N = 1510;
+vector<int>g[N];
+int f[N][3]; // f[i][0]表示被父节点看， f[i][1]表示被自己看， f[i][2]表示被子节点看
+int n;
+int w[N];
+void dfs(int u, int fa){
+    f[u][0] = 0, f[u][1] = w[u];
+    for(auto c : g[u]) {
+        if (c != fa) {
+            dfs(c, u);
+        }
+    }
+    for(auto c : g[u]){
+        f[u][0] += min(f[c][1], f[c][2]);
+        f[u][1] += min(f[c][0], min(f[c][1], f[c][2]));
+    }
+    for(auto c : g[u]){
+        f[u][2] = min(f[u][2], f[u][0] + f[c][1] - min(f[c][1], f[c][2]));
+    }
+}
+bool st[N];
+int main(){
+    cin>>n;
+    for(int i = 0; i < n; i++){
+        int a, b, c;
+        cin>>a>>w[a]>>c;
+        while(c--) {
+            cin >> b;
+            g[a].push_back(b);
+            st[b] = true;
+        }
+    }
+    memset(f, 0x3f, sizeof f);
+    int root = -1;
+    for(int i = 1; i <= n; i++){
+        if(!st[i]){
+            root = i;
+            dfs(i, -1);
+            break;
+        }
+    }
+    cout<<min(f[root][1], f[root][2]);
+    return 0;
+}
+
 
 ```
