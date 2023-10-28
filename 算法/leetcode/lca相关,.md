@@ -2,7 +2,7 @@
  * @Author: zzzzztw
  * @Date: 2023-08-27 20:57:03
  * @LastEditors: Do not edit
- * @LastEditTime: 2023-09-05 16:27:41
+ * @LastEditTime: 2023-10-24 19:54:34
  * @FilePath: /myLearning/算法/leetcode/lca相关,.md
 -->
 # lca 树上倍增
@@ -172,4 +172,252 @@ public:
         return res;
     }
 };
+```
+
+
+# 3. 给出 n 个点的一棵树，多次询问两点之间的最短距离。求树两点之间距离的模板题
+* 最短距离相当于各自到他俩之间的公共祖先的路径距离
+```cpp
+#pragma GCC optimize(2)
+#include <bits/stdc++.h>
+using namespace std;
+using ll = long long;
+using pii = pair<int, int>;
+int dx[4] = {-1,0,1,0}, dy[4] = {0,1,0,-1};
+const int N = 40010;
+vector<pii>g[N];
+ll fa[N][20], depth[N];
+ll dis[N][20];
+int n, m;
+
+// 建树，建立的过程中预处理出来与父节点的距离dis数组和父节点fa数组和深度depth数组
+void dfs(int u, int f, int d){
+    fa[u][0] = f;
+    dis[u][0] = d;
+    for(auto c : g[u]){
+        if(c.first != f){
+            depth[c.first] = depth[u] + 1;
+            dfs(c.first, u, c.second);
+        }
+    }
+}
+// 预处理，外层循环2的i次幂，内层为点的编号，倍增处理出来与倍增路径上的点的距离和编号
+void lcapre(){
+    for(int i = 1; i <= 17; i++){
+        for(int x = 1; x <= n; x++){
+            if(fa[x][i - 1] != 1){
+                fa[x][i] = fa[fa[x][i - 1]][i - 1];
+                dis[x][i] = dis[x][i - 1] + dis[fa[x][i - 1]][i - 1];
+            }
+        }
+    }
+}
+
+// lca跳跃过程
+int lca(int a, int b){
+    if(a == b)return 0;//同一个点直接返回
+    int res = 0;
+
+    // 找出来两点在深度的差值，深的向上跳，直到两个点在同一层，过程中记录距离。
+    if(depth[a] < depth[b])swap(a, b);
+    int dif = depth[a] - depth[b];
+    for(int i = 0; i <= 17; i++){
+        if((dif >> i) & 1){
+            res += dis[a][i];
+            a = fa[a][i];
+        }
+    }
+    // 这一步很关键，如果同一层了，且a等于b点，说明这俩点有一个是对方的公共祖先，在路径上，此时直接返回这个路径距离即可。
+    if(a == b)return res;
+
+    // 开始倍增的跳，知道他俩一起跳到公共祖先的下方。
+    // 如果la为-1了说明跳过了，跳到最上面的点了，continue
+    // la = lb了，说明跳到了或者跳过了，continue
+    // la != lb，开始向上跳，记录答案
+    for(int i = 17; i >= 0; i--){
+        int la = fa[a][i], lb = fa[b][i];
+        if(la == -1)continue;
+        if(la == lb)continue;
+        if(la != lb){
+            res += dis[a][i] + dis[b][i];
+            a = fa[a][i];
+            b = fa[b][i];
+        }
+    }
+    //此时两个点在公共祖先下面，需要加上到公共祖先的距离，返回即可。
+    res += dis[a][0] + dis[b][0];
+    return res;
+}
+
+void solve() {
+    cin>>n >> m;
+    for(int i = 0; i < n - 1; i++){
+        int a, b, c;
+        cin>>a>>b>>c;
+        g[a].push_back({b,c});
+        g[b].push_back({a,c});
+    }
+    dfs(1, -1, 0);
+    lcapre();
+    for(int i = 0; i < m; i++){
+        int a, b;
+        cin>>a>>b;
+        cout<<lca(a, b)<<endl;
+    }
+}
+int main(){
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    solve();
+    return 0;
+}
+```
+
+## 求次小生成树，lca做法
+* 需要在倍增的时候，记录每段中的最小值和次小值
+```cpp
+#pragma GCC optimize(2)
+#include <bits/stdc++.h>
+using namespace std;
+using ll = long long;
+using pii = pair<int, int>;
+int dx[4] = {-1,0,1,0}, dy[4] = {0,1,0,-1};
+const int N = 100010;
+struct Node{
+    int u, v, w;
+    bool has;
+    Node(int a, int b, int c):u(a),v(b), w(c),has(false){};
+};
+vector<Node>g;
+vector<pii>e[N];
+ll fa[N][20], depth[N];
+ll dis[N][20];
+ll dis2[N][20];
+int p[N];
+bool st[N];
+int find(int x){
+    if(x != p[x]){
+        p[x] = find(p[x]);
+    }
+    return p[x];
+}
+int n, m;
+void dfs(int u, int f, int d){
+    fa[u][0] = f;
+    dis[u][0] = d;
+    dis2[u][0] = LLONG_MIN;
+    st[u] = true;
+    for(auto c : e[u]){
+        if(c.first != f && !st[c.first]){
+            depth[c.first] = depth[u] + 1;
+            dfs(c.first, u, c.second);
+        }
+    }
+}
+
+void lcapre(){
+    for(int i = 1; i <= 17; i++){
+        for(int x = 1; x <= n; x++){
+            if(fa[x][i - 1] != 1){
+                fa[x][i] = fa[fa[x][i - 1]][i - 1];
+                vector<ll>t;
+                t.push_back(dis[x][i - 1]);
+                t.push_back(dis2[x][i - 1]);
+                t.push_back(dis[fa[x][i - 1]][i - 1]);
+                t.push_back(dis2[fa[x][i - 1]][i - 1]);
+                ll d1 = LLONG_MIN, d2 = LLONG_MIN;
+                for(int i = 0; i < t.size(); i++){
+                    if(t[i] > d1){
+                        d2 = d1;
+                        d1 = t[i];
+                    }else if(t[i] < d1 && t[i] > d2)d2 = t[i];
+                }
+                dis[x][i] = d1;
+                dis2[x][i] = d2;
+            }
+        }
+    }
+}
+
+int lca(int a, int b, int w){
+    vector<ll>t;
+    if(depth[a] < depth[b])swap(a, b);
+    int dif = depth[a] - depth[b];
+    for(int i = 0; i <= 17; i++){
+        if((dif >> i) & 1){
+            t.push_back(dis[a][i]);
+            t.push_back(dis2[a][i]);
+            a = fa[a][i];
+        }
+    }
+    if(a != b){
+        for(int i = 17; i >= 0; i--){
+            int la = fa[a][i], lb = fa[b][i];
+            if(la == -1)continue;
+            if(la == lb)continue;
+            if(la != lb){
+                t.push_back(dis[a][i]);
+                t.push_back(dis2[a][i]);
+                t.push_back(dis[b][i]);
+                t.push_back(dis2[b][i]);
+                a = fa[a][i];
+                b = fa[b][i];
+            }
+        } 
+        t.push_back(dis[a][0]);
+        t.push_back(dis[b][0]);
+    }
+    ll d1 = LLONG_MIN, d2 = LLONG_MIN;
+    for(int i = 0; i < t.size(); i++){
+        if(t[i] > d1){
+            d2 = d1;
+            d1 = t[i];
+        }else if(t[i] < d1 && t[i] > d2)d2 = t[i];
+    }
+    if(w > d1)return  w - d1;
+    if(w > d2)return w - d2;
+    return 1e18;
+}
+
+void solve() {
+    cin>>n>>m;
+    for(int i = 1; i <= n; i++)p[i] = i;
+    for(int i = 0; i < m; i++){
+        int a, b, c;
+        cin>>a>>b>>c;
+        if(a == b)continue;
+        g.push_back({a, b, c});
+    }
+    sort(g.begin(), g.end(), [&](auto&a, auto&b){
+        return a.w < b.w;
+    });
+    ll sum = 0;
+    for(auto &c : g){
+        int la = find(c.u), lb = find(c.v), w = c.w;
+        if(la != lb){
+            sum += w;
+            p[lb] = la;
+            c.has = true;
+            e[c.u].push_back({c.v, w});
+            e[c.v].push_back({c.u, w});
+        }
+    }
+    dfs(1, -1, 0);
+    lcapre();
+    ll res = LLONG_MAX;
+    for(auto c : g){
+        if(!c.has){
+            int u = c.u, v = c.v, w = c.w;
+            res = min(res, sum + lca(u, v, w));
+        }
+    }
+    cout<<res<<endl;
+}
+int main(){
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    solve();
+    return 0;
+}
+
 ```
